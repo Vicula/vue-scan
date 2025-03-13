@@ -13,9 +13,10 @@
     "changeset:add": "changeset add",
     "bump": "changset add",
     "changeset:publish": "changeset publish",
-    "dev": "pnpm run dev:vue",
-    "dev:vue": "pnpm -C playgrounds/vue run dev",
-    "dev:nuxt": "pnpm -C playgrounds/nuxt run dev",
+    "dev": "pnpm run dev:all",
+    "dev:all": "pnpm -C ./playground run dev",
+    "dev:vue": "pnpm -C ./playground/apps/web run dev",
+    "dev:nuxt": "pnpm -C ./playground/apps/docs run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
