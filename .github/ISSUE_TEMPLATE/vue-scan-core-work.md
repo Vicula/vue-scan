@@ -7,8 +7,8 @@ assignees: Vicula
 
 ---
 
-# 📡 VueScan Task
-## [TITLE]
+# 📥 VueScan Task
+## 🏷️ [TITLE]
 
 Short paragraph of what needs to happen...
 
