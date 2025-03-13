@@ -55,8 +55,13 @@ const packAll = () => {
 
 // Parse command-line arguments
 const args = process.argv.slice(2);
-if (args.includes('build')) buildAll();
-else if (args.includes('dev')) devAll();
-else if (args.includes('pack')) packAll();
-// biome-ignore lint/suspicious/noConsole: Intended debug output
-else console.error('Invalid command. Use: node workspace.mjs [build|dev|pack]');
+if (args.includes('build')) {
+  buildAll();
+} else if (args.includes('dev')) {
+  devAll();
+} else if (args.includes('pack')) {
+  packAll();
+} else {
+  // biome-ignore lint/suspicious/noConsole: Intended debug output
+  console.error('Invalid command. Use: node workspace.mjs [build|dev|pack]');
+}
