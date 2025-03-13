@@ -16,7 +16,7 @@ To create [API routes](https://nuxt.com/docs/guide/directory-structure/server), 
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+To learn more about Nuxt.js, take a look at the following resources:
 
 - [NuxtJs Official documentation](https://nuxt.com/docs/getting-started/introduction) - learn about Nuxt to create production-grade full-stack web apps and websites features and API.
 

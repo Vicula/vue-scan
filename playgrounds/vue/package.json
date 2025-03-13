@@ -1,9 +1,9 @@
 {
-  "name": "with-vue-nuxt",
+  "name": "vue-playground",
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "NODE_OPTIONS=--trace-deprecation turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
