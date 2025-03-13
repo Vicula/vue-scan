@@ -1,0 +1,1 @@
+TODO: Create readme for nuxt-scan package

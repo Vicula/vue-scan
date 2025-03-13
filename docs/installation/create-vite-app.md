@@ -1,0 +1,1 @@
+TODO: Create vite cli installation guide

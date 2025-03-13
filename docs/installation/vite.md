@@ -1,0 +1,1 @@
+TODO: Create vite installation guide
