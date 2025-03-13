@@ -1,0 +1,11 @@
+node_modules
+.DS_Store
+.env
+dist
+**/*.tgz
+*.log
+build
+!packages/extension/build/
+# SSL Certificates
+bin/certs/*.pem
+bin/certs/*.key
