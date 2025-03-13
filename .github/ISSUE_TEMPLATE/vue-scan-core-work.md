@@ -7,7 +7,8 @@ assignees: Vicula
 
 ---
 
-# 🔖 VueScan Task
+# 📡 VueScan Task
+## [TITLE]
 
 Short paragraph of what needs to happen...
 
@@ -15,8 +16,13 @@ Short paragraph of what needs to happen...
 - this is added
 - that is removed
 
-## 🚥 Criteria:
+## 🧾 Criteria:
 - Must do this
 - Has to cover that
+
+## 🚥 Test Procedure:
+- Do this
+- Go here
+- VERIFY: It does this
 
 ## 🖼️ Screenshots:
