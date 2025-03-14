@@ -1,4 +1,6 @@
 packages:
-  - 'packages/*'
-  - 'kitchen-sink'
-  
+  - packages/*
+  - kitchen-sink
+  - playground
+onlyBuiltDependencies:
+  - '@biomejs/biome'
