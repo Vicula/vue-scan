@@ -3,6 +3,7 @@ import App from './app.vue';
 // @ts-ignore - vue-scan is defined in vite.config.ts aliases
 import { createVueScan } from 'vue-scan';
 // Import our local memory profiler
+// @ts-ignore - No type definitions for local memory profiler
 import memoryProfiler from './memory-profiler';
 
 // Import Vue Devtools
@@ -11,6 +12,7 @@ import { devtools } from '@vue/devtools';
 // Initialize Vue Devtools in development mode
 if (import.meta.env.DEV) {
   // Connect to Vue Devtools
+  // Use the simple connect method as the DevTools API may have changed
   devtools.connect();
   console.log('Vue Devtools initialized');
 }
