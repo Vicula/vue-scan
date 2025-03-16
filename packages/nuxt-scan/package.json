@@ -48,13 +48,16 @@
   },
   "dependencies": {
     "@nuxt/devtools-kit": "^2.3.0",
+    "@nuxt/devtools-ui-kit": "^2.3.0",
     "@nuxt/kit": "^3.8.0",
+    "express": "^4.21.2",
     "h3": "^1.15.1",
     "vue-scan": "workspace:*"
   },
   "devDependencies": {
     "@nuxt/module-builder": "^0.5.0",
     "@nuxt/schema": "^3.8.0",
+    "@types/express": "^5.0.0",
     "@types/node": "^18.0.0",
     "nuxt": "^3.8.0",
     "vue": "^3.3.0"

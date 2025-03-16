@@ -1,103 +1,58 @@
-import { addCustomTab } from '@nuxt/devtools-kit';
-import type { ComponentMemoryStats } from '../memory-profiler.js';
+import { addCustomTab, extendServerRpc } from '@nuxt/devtools-kit';
 import {
   getMemoryStats,
   clearMemoryStats,
   startMemoryTracking,
   stopMemoryTracking,
+  isMemoryTracking,
 } from '../memory-profiler.js';
+import type { MemoryServerFunctions } from './rpc-types.js';
+
+// Define RPC namespace
+const RPC_NAMESPACE = 'nuxt-scan-memory';
 
 export function setupDevtoolsPanel() {
-  const memoryStatsState = {
-    stats: {} as Record<string, ComponentMemoryStats>,
-    isTracking: false,
-    refreshInterval: null as NodeJS.Timeout | null,
-  };
+  // Setup RPC methods using the extendServerRpc method with type
+  const rpc = extendServerRpc<{}, MemoryServerFunctions>(RPC_NAMESPACE, {
+    // Memory operations
+    getMemoryStats() {
+      return getMemoryStats();
+    },
 
-  // Computed properties for the panel
-  const getComponentCount = () => Object.keys(memoryStatsState.stats).length;
-  const getInstanceCount = () => {
-    return Object.values(memoryStatsState.stats).reduce(
-      (sum, stat) => sum + (stat as ComponentMemoryStats).instanceCount,
-      0,
-    );
-  };
-  const getTotalMemory = () => {
-    return Object.values(memoryStatsState.stats).reduce(
-      (sum, stat) => sum + (stat as ComponentMemoryStats).lastHeapUsed,
-      0,
-    );
-  };
+    startMemoryTracking() {
+      startMemoryTracking(2000); // Update every 2 seconds
+      return true;
+    },
 
-  // Format bytes to MB
-  function formatByteSize(bytes: number) {
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-  }
+    stopMemoryTracking() {
+      stopMemoryTracking();
+      return true;
+    },
 
-  // Define actions for the panel
-  const startTracking = () => {
-    startMemoryTracking(2000); // Update every 2 seconds
-    memoryStatsState.isTracking = true;
+    clearMemoryStats() {
+      clearMemoryStats();
+      return true;
+    },
 
-    // Setup refresh interval
-    memoryStatsState.refreshInterval = setInterval(() => {
-      memoryStatsState.stats = getMemoryStats();
-    }, 2000);
-  };
-
-  const stopTracking = () => {
-    stopMemoryTracking();
-    memoryStatsState.isTracking = false;
-
-    if (memoryStatsState.refreshInterval) {
-      clearInterval(memoryStatsState.refreshInterval);
-      memoryStatsState.refreshInterval = null;
-    }
-  };
-
-  const refreshStats = () => {
-    memoryStatsState.stats = getMemoryStats();
-  };
-
-  const clearStats = () => {
-    clearMemoryStats();
-    memoryStatsState.stats = {};
-  };
-
-  // Initial stats fetch
-  refreshStats();
-
-  // Colors based on memory usage
-  function getMemoryColor(bytes: number): string {
-    const mb = bytes / (1024 * 1024);
-
-    if (mb < 1) {
-      return 'var(--color-success)';
-    } // Green for < 1MB
-    if (mb < 5) {
-      return 'var(--color-warning)';
-    } // Yellow for < 5MB
-    if (mb < 20) {
-      return 'var(--color-orange)';
-    } // Orange for < 20MB
-    return 'var(--color-error)'; // Red for >= 20MB
-  }
-
-  // Define the panel using addCustomTab instead of defineNuxtDevtoolsPanel
-  addCustomTab({
-    name: 'nuxt-scan-memory',
-    icon: 'carbon:chart-evaluation',
-    title: 'Memory Profiler',
-    view: {
-      type: 'iframe',
-      src: '/__nuxt-scan/memory-panel',
+    isMemoryTracking() {
+      return isMemoryTracking();
     },
   });
 
-  // Start tracking automatically if enabled in options
-  // We could get this from the module options
+  // Register the custom tab
+  addCustomTab({
+    name: 'nuxt-scan-memory',
+    title: 'Memory Profiler',
+    icon: 'carbon:chart-evaluation',
+    view: {
+      type: 'iframe',
+      src: '/api/__nuxt-scan/devtools/ui',
+    },
+  });
+
+  // Start tracking automatically if enabled in options (could get from module options)
   const shouldAutoStart = true;
   if (shouldAutoStart) {
-    startTracking();
+    startMemoryTracking();
   }
 }
