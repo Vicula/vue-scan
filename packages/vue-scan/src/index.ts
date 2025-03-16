@@ -126,6 +126,20 @@ export function createVueScan(options: VueScanOptions = {}) {
       // Register the memory profile directive
       app.directive('memory-profile', vMemoryProfile);
 
+      // Expose the monitor instance to components
+      app.config.globalProperties.$vueScan = monitor;
+
+      // Create a global function to trigger component highlights for testing
+      (window as any).__vueScanTriggerHighlights = () => {
+        console.log('Triggering component highlights manually');
+        monitor.triggerHighlightAll();
+      };
+
+      // Debug log to verify the plugin is installed correctly
+      console.log(
+        'Vue Scan plugin installed successfully. Use window.__vueScanTriggerHighlights() to test component highlights.',
+      );
+
       // Apply permanent overlays if enabled
       if (mergedOptions.permanentComponentOverlays) {
         // Use setTimeout to ensure this runs after components have been mounted

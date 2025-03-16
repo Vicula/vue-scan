@@ -67,6 +67,9 @@ export interface PerformanceMonitor {
   stopMemoryTracking: () => void;
   getMemoryStats: () => Record<string, any>;
   clearMemoryStats: () => void;
+
+  // Testing utility
+  triggerHighlightAll: () => void;
 }
 
 /**
@@ -183,22 +186,49 @@ export function createPerformanceMonitor(
     highlightComponent(id: string, color = 'rgba(255, 0, 0, 0.3)') {
       const component = components.get(id);
       if (!component || !component.el) {
+        console.log(
+          `Failed to highlight component ${id}: ${component ? 'No element reference' : 'Component not found'}`,
+        );
         return;
       }
+
+      console.log(`Highlighting component: ${component.name} (${id})`);
 
       // Store original styles
       const originalStyles = {
         outline: component.el.style.outline,
         outlineOffset: component.el.style.outlineOffset,
         position: component.el.style.position,
+        backgroundColor: component.el.style.backgroundColor,
+        transition: component.el.style.transition,
       };
 
-      // Apply highlight
-      component.el.style.outline = `2px solid ${color}`;
-      component.el.style.outlineOffset = '-2px';
+      // Make the highlight more noticeable
+      const moreVisibleColor = 'rgba(255, 0, 0, 0.5)'; // Brighter red with higher opacity
+
+      // Apply highlight with transition
+      component.el.style.transition = 'all 0.3s ease';
+      component.el.style.outline = `3px solid ${moreVisibleColor}`;
+      component.el.style.outlineOffset = '-3px';
+      component.el.style.backgroundColor = 'rgba(255, 200, 200, 0.2)'; // Light red background
+
       if (component.el.style.position === 'static') {
         component.el.style.position = 'relative';
       }
+
+      // Add a data attribute to indicate it's highlighted
+      component.el.setAttribute('data-vue-scan-highlighted', 'true');
+
+      // Log element dimensions to help debug visibility issues
+      const rect = component.el.getBoundingClientRect();
+      console.log(
+        `Element dimensions: width=${rect.width}, height=${rect.height}, visible in viewport: ${
+          rect.top < window.innerHeight &&
+          rect.bottom > 0 &&
+          rect.left < window.innerWidth &&
+          rect.right > 0
+        }`,
+      );
 
       // Restore after a short delay
       setTimeout(() => {
@@ -206,6 +236,9 @@ export function createPerformanceMonitor(
           component.el.style.outline = originalStyles.outline;
           component.el.style.outlineOffset = originalStyles.outlineOffset;
           component.el.style.position = originalStyles.position;
+          component.el.style.backgroundColor = originalStyles.backgroundColor;
+          component.el.style.transition = originalStyles.transition;
+          component.el.removeAttribute('data-vue-scan-highlighted');
         }
       }, 1000);
     },
@@ -253,6 +286,28 @@ export function createPerformanceMonitor(
     clearMemoryStats() {
       clearMemoryStats();
     },
+
+    // Add a testing utility to manually trigger highlights
+    triggerHighlightAll() {
+      console.log('Manually triggering highlight for all components');
+
+      // Highlight each component in sequence with a slight delay
+      Array.from(components.entries()).forEach(([id, component], index) => {
+        setTimeout(() => {
+          // Only highlight if the component has an element reference
+          if (component.el) {
+            console.log(
+              `Manually highlighting component: ${component.name} (${id})`,
+            );
+            monitor.highlightComponent(id, 'rgba(0, 128, 255, 0.5)'); // Use a different color for manual highlights
+          } else {
+            console.log(
+              `Component has no element reference: ${component.name} (${id})`,
+            );
+          }
+        }, index * 500); // Stagger the highlights
+      });
+    },
   };
 
   // Start memory tracking if enabled
@@ -288,6 +343,45 @@ export function createPerformanceMonitor(
         onMounted(() => {
           if (componentMetrics) {
             componentMetrics.mountTime = performance.now();
+
+            // Add this debug message to verify mounting is happening
+            console.log(
+              `Component mounted: ${componentMetrics.name} (${componentMetrics.id})`,
+            );
+
+            // Also trigger the measurement on mount to ensure we get at least one measurement
+            if (options.trackRenderFrequency) {
+              const startTime = performance.now();
+              activeRenders.add(componentMetrics.id);
+
+              // Use microtask to measure render duration
+              queueMicrotask(() => {
+                if (!componentMetrics) {
+                  console.log(
+                    'componentMetrics is undefined in mount microtask',
+                  );
+                  return;
+                }
+
+                const endTime = performance.now();
+                const renderTime = endTime - startTime;
+
+                componentMetrics.renderCount++;
+                componentMetrics.lastRenderTime = renderTime;
+                componentMetrics.totalRenderTime += renderTime;
+                componentMetrics.averageRenderTime =
+                  componentMetrics.totalRenderTime /
+                  componentMetrics.renderCount;
+
+                activeRenders.delete(componentMetrics.id);
+
+                // Flash the component in the UI on mount
+                console.log(
+                  `Highlighting component on mount: ${componentMetrics.name}`,
+                );
+                monitor.highlightComponent(componentMetrics.id);
+              });
+            }
           }
         });
       }
@@ -296,17 +390,23 @@ export function createPerformanceMonitor(
       if (options.trackRenderFrequency) {
         onUpdated(() => {
           if (!componentMetrics) {
+            console.log('componentMetrics is undefined in onUpdated hook');
             return;
           }
 
+          console.log(
+            `Component updated: ${componentMetrics.name} (${componentMetrics.id})`,
+          );
           const startTime = performance.now();
           activeRenders.add(componentMetrics.id);
 
           // Use microtask to measure render duration
           queueMicrotask(() => {
             if (!componentMetrics) {
+              console.log('componentMetrics is undefined');
               return;
             }
+            console.log('componentMetrics is defined');
 
             const endTime = performance.now();
             const renderTime = endTime - startTime;
