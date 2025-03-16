@@ -498,5 +498,6 @@ a {
   width: 1000px;
   height: 1000px;
   opacity: 0.15;
+  pointer-events: none;
 }
 </style>

@@ -3,7 +3,7 @@ import { ref, defineAsyncComponent } from 'vue';
 import { Page } from 'ui';
 import { name } from './package.json';
 
-// Import components lazily for better performance
+// Import components
 const NestedParent = defineAsyncComponent(
   () => import('./components/NestedParent.vue'),
 );
@@ -26,10 +26,6 @@ const tabs = [
   { id: 'form', label: 'Form Component' },
   { id: 'render', label: 'Render Optimizations' },
 ];
-
-function setActiveTab(tabId: string) {
-  activeTab.value = tabId;
-}
 
 // Set the page metadata - TypeScript error ignored since useHead is provided by Nuxt
 // @ts-ignore
@@ -58,7 +54,7 @@ defineExpose({
         v-for="tab in tabs" 
         :key="tab.id"
         :class="{ 'active': activeTab === tab.id }"
-        @click="setActiveTab(tab.id)"
+        @click="activeTab = tab.id"
         class="tab-button"
       >
         {{ tab.label }}
