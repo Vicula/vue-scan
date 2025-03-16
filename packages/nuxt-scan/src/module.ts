@@ -3,6 +3,7 @@ import {
   addPluginTemplate,
   addServerHandler,
   createResolver,
+  addTemplate,
 } from '@nuxt/kit';
 import { addCustomTab } from '@nuxt/devtools-kit';
 import { resolve, join } from 'path';
@@ -21,6 +22,7 @@ export interface ModuleOptions {
     autoStart?: boolean;
     sampleInterval?: number;
   };
+  memoryPanel?: boolean;
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -45,6 +47,7 @@ export default defineNuxtModule<ModuleOptions>({
       autoStart: true,
       sampleInterval: 5000,
     },
+    memoryPanel: true,
   },
   setup(options, nuxt) {
     // Skip in production unless explicitly enabled
@@ -134,45 +137,23 @@ export default defineNuxtModule<ModuleOptions>({
       const { setupDevtoolsPanel } = require('./runtime/devtools/index.js');
       setupDevtoolsPanel();
 
-      // Also register directly here as a fallback
+      // Register memory profiler tab
       addCustomTab({
         name: 'nuxt-scan-memory',
         title: 'Memory Profiler',
         icon: 'carbon:chart-evaluation',
         view: {
           type: 'iframe',
-          src: '/api/__nuxt-scan/devtools/ui',
+          src: '/__nuxt_scan/memory-panel',
         },
       });
 
-      // Register the simple test tab
-      const {
-        setupSimpleTestTab,
-      } = require('./runtime/devtools/simple-tab.js');
-      setupSimpleTestTab();
-
-      // Start standalone server for debugging
-      try {
-        const {
-          createStandaloneServer,
-        } = require('./runtime/server/standalone-server.js');
-        const standaloneServer = createStandaloneServer();
-
-        // Register an additional tab that points to the standalone server
-        addCustomTab({
-          name: 'nuxt-scan-standalone',
-          title: 'Standalone Test',
-          icon: 'carbon:server',
-          view: {
-            type: 'iframe',
-            src: 'http://localhost:3333/simple-test',
-          },
-        });
-
-        console.log(`Standalone server started at ${standaloneServer.url}`);
-      } catch (error) {
-        console.error('Failed to start standalone server:', error);
-      }
+      // Add server handler for the memory panel
+      const resolver = createResolver(import.meta.url);
+      addServerHandler({
+        route: '/__nuxt_scan/memory-panel',
+        handler: resolver.resolve('./runtime/devtools/client/index.js'),
+      });
 
       // Log success
       console.log('Nuxt Scan Devtools integration initialized');
@@ -189,5 +170,58 @@ export default defineNuxtModule<ModuleOptions>({
         './runtime/server/middleware/test-middleware',
       ),
     });
+
+    // Memory Panel Feature
+    if (options.memoryPanel) {
+      const resolver = createResolver(import.meta.url);
+
+      // Add server handler for memory panel
+      addServerHandler({
+        route: '/api/__nuxt_scan/memory',
+        handler: resolver.resolve('./runtime/server/api/memory'),
+      });
+
+      // Add client plugin for memory panel
+      nuxt.options.build.transpile.push(resolver.resolve('./runtime'));
+
+      // Add template for the client plugin
+      addTemplate({
+        filename: 'nuxt-scan.mjs',
+        getContents: () => 'export default () => {}',
+      });
+
+      // Register with Nuxt DevTools
+      if (nuxt.options.devtools?.enabled) {
+        // Register the memory panel tab in DevTools with a more direct route
+        addCustomTab({
+          name: 'nuxt-scan-memory',
+          title: 'Memory',
+          icon: 'carbon:chart-line-smooth',
+          view: {
+            type: 'iframe',
+            src: '/__nuxt_scan/memory-panel',
+          },
+        });
+
+        // Add server handler for the DevTools client with a more direct route
+        addServerHandler({
+          route: '/__nuxt_scan/memory-panel',
+          handler: resolver.resolve('./runtime/devtools/client'),
+        });
+
+        // Also register via hooks for backward compatibility
+        nuxt.hooks.hook('devtools:customTabs', (tabs) => {
+          tabs.push({
+            name: 'nuxt-scan-memory',
+            title: 'Memory',
+            icon: 'carbon:chart-line-smooth',
+            view: {
+              type: 'iframe',
+              src: '/__nuxt_scan/memory-panel',
+            },
+          });
+        });
+      }
+    }
   },
 });
