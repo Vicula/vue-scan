@@ -15,14 +15,15 @@ const filterText = ref('');
 const heavyComputation = ref(0);
 
 // Expensive computed property
-const filteredItems = computed(() => {
-  // Simulate a slow computation by doing unnecessary work
+const computeHeavyValue = computed(() => {
   let result = 0;
   for (let i = 0; i < 10000; i++) {
     result += Math.sqrt(i);
   }
-  heavyComputation.value = result;
+  return result;
+});
 
+const filteredItems = computed(() => {
   // Filter items
   return items.value
     .filter((item) => {
@@ -33,6 +34,11 @@ const filteredItems = computed(() => {
       return matchesFilter && matchesCompletion;
     })
     .slice(0, 20); // Only show 20 items at a time for performance
+});
+
+// Watch the heavy computation value
+watch(computeHeavyValue, (newValue) => {
+  heavyComputation.value = newValue;
 });
 
 // Actions
