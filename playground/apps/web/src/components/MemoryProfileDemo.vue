@@ -57,12 +57,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useNuxtApp } from '#app';
+import { ref, onMounted, onUnmounted, inject } from 'vue';
 
-// Access memory profiler through Nuxt's plugin system
-const nuxtApp = useNuxtApp();
-const memoryProfiler = nuxtApp.$memoryProfiler;
+// Get memory profiler from app instance via provide/inject
+const memoryProfiler = inject('memoryProfiler');
 
 // Component state
 const componentCount = ref(0);

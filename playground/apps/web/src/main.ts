@@ -55,4 +55,7 @@ if (import.meta.env.DEV) {
 // Add memory profiler to app's global properties
 app.config.globalProperties.$memoryProfiler = memoryProfiler;
 
+// Provide memoryProfiler for components to inject
+app.provide('memoryProfiler', memoryProfiler);
+
 app.mount('#app');
