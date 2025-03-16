@@ -181,20 +181,30 @@ export function setupOverlay(
         if (component.el) {
           if (monitor.options.permanentComponentOverlays) {
             // Add overlay
-            const overlayColor = 'rgba(0, 128, 255, 0.3)'; // Light blue semi-transparent
-            component.el.style.outline = `1px dashed ${overlayColor}`;
-            component.el.style.outlineOffset = '-1px';
+            const overlayColor = 'rgba(255, 0, 0, 0.5)'; // Match the color in monitor.ts
+            component.el.style.outline = `2px solid ${overlayColor}`;
+            component.el.style.outlineOffset = '-2px';
             component.el.setAttribute(
               'data-vue-scan-component',
               component.name,
             );
             component.el.setAttribute('data-vue-scan-id', component.id);
-          } else if (component.el.style.outline.includes('dashed')) {
+
+            // Log to verify this code is being executed
+            console.log(
+              `Toggled outline ON for component: ${component.name} (${component.id})`,
+            );
+          } else if (component.el.style.outline.includes('solid')) {
             // Remove overlay (only if it's our outline - don't remove highlight outlines)
             component.el.style.outline = '';
             component.el.style.outlineOffset = '';
             component.el.removeAttribute('data-vue-scan-component');
             component.el.removeAttribute('data-vue-scan-id');
+
+            // Log to verify this code is being executed
+            console.log(
+              `Toggled outline OFF for component: ${component.name} (${component.id})`,
+            );
           }
         }
       });

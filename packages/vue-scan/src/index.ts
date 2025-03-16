@@ -126,6 +126,33 @@ export function createVueScan(options: VueScanOptions = {}) {
       // Register the memory profile directive
       app.directive('memory-profile', vMemoryProfile);
 
+      // Apply permanent overlays if enabled
+      if (mergedOptions.permanentComponentOverlays) {
+        // Use setTimeout to ensure this runs after components have been mounted
+        setTimeout(() => {
+          console.log(
+            'Applying permanent overlays to all components on initialization',
+          );
+          if (monitor && monitor.components) {
+            monitor.components.forEach((component) => {
+              if (component.el) {
+                const overlayColor = 'rgba(255, 0, 0, 0.5)';
+                component.el.style.outline = `2px solid ${overlayColor}`;
+                component.el.style.outlineOffset = '-2px';
+                component.el.setAttribute(
+                  'data-vue-scan-component',
+                  component.name,
+                );
+                component.el.setAttribute('data-vue-scan-id', component.id);
+                console.log(
+                  `Applied initial outline to component: ${component.name}`,
+                );
+              }
+            });
+          }
+        }, 1000); // Wait 1 second for components to render
+      }
+
       // Expose the monitor on the Vue instance for debugging
       if (process.env.NODE_ENV !== 'production') {
         app.config.globalProperties.$vueScan = monitor;

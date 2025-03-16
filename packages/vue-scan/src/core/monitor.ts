@@ -80,6 +80,39 @@ export function createPerformanceMonitor(
   const activeRenders = new Set<string>();
   const memoryTrackingInterval: number | null = null;
 
+  // Debug logging
+  console.log('Vue Scan monitor created with options:', options);
+
+  // Register a debug function to check component registration
+  const logComponentStats = () => {
+    setTimeout(() => {
+      const totalComponents = components.size;
+      const componentsWithElements = Array.from(components.values()).filter(
+        (c) => !!c.el,
+      ).length;
+
+      console.log(
+        `Vue Scan Stats: ${totalComponents} components registered, ${componentsWithElements} with DOM elements`,
+      );
+
+      if (options.permanentComponentOverlays) {
+        console.log(
+          'Component outlines should be visible. If not, check for CSS conflicts or z-index issues.',
+        );
+      }
+
+      // Log the first few components for debugging
+      const componentList = Array.from(components.values()).slice(0, 5);
+      console.log(
+        'Sample components:',
+        componentList.map((c) => `${c.name} (has element: ${!!c.el})`),
+      );
+    }, 2000);
+  };
+
+  // Run debug logging after a short delay
+  logComponentStats();
+
   // Create the monitor instance
   const monitor: PerformanceMonitor = {
     components,
@@ -121,16 +154,19 @@ export function createPerformanceMonitor(
 
       // Apply permanent overlay to the component if enabled
       if (options.permanentComponentOverlays && metrics.el) {
-        // Add a persistent outline to the element
-        const overlayColor = 'rgba(0, 128, 255, 0.3)'; // Light blue semi-transparent
-        metrics.el.style.outline = `1px dashed ${overlayColor}`;
-        metrics.el.style.outlineOffset = '-1px';
+        // Add a persistent outline to the element - make it more visible
+        const overlayColor = 'rgba(255, 0, 0, 0.5)'; // Bright red with higher opacity
+        metrics.el.style.outline = `2px solid ${overlayColor}`;
+        metrics.el.style.outlineOffset = '-2px';
 
         // Add component name as a data attribute for debugging
         metrics.el.setAttribute('data-vue-scan-component', componentName);
 
         // Add component ID as a data attribute
         metrics.el.setAttribute('data-vue-scan-id', id);
+
+        // Log to verify this code is being executed
+        console.log(`Applied outline to component: ${componentName} (${id})`);
       }
 
       return metrics;
