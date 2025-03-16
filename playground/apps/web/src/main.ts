@@ -6,16 +6,14 @@ import { createVueScan } from 'vue-scan';
 // @ts-ignore - No type definitions for local memory profiler
 import memoryProfiler from './memory-profiler';
 
-// Import Vue Devtools
-import { devtools } from '@vue/devtools';
+// Remove the standalone Vue DevTools connection
+// import { devtools } from '@vue/devtools';
 
-// Initialize Vue Devtools in development mode
-if (import.meta.env.DEV) {
-  // Connect to Vue Devtools
-  // Use the simple connect method as the DevTools API may have changed
-  devtools.connect();
-  console.log('Vue Devtools initialized');
-}
+// No need to initialize standalone Vue DevTools since we're using vite-plugin-vue-devtools
+// if (import.meta.env.DEV) {
+//   devtools.connect();
+//   console.log('Vue Devtools initialized');
+// }
 
 const app = createApp(App);
 

@@ -5,12 +5,18 @@ interface OverlayOptions {
   position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
   theme?: 'light' | 'dark';
   showComponentList?: boolean;
+  highlightRerenders?: boolean;
+  highlightDuration?: number; // in milliseconds
+  highlightColor?: string;
 }
 
 const defaultOverlayOptions: OverlayOptions = {
   position: 'bottom-right',
   theme: 'dark',
   showComponentList: true,
+  highlightRerenders: true,
+  highlightDuration: 500, // 500ms highlight duration by default
+  highlightColor: 'rgba(255, 105, 180, 0.3)', // semi-transparent hot pink by default
 };
 
 /**
@@ -24,6 +30,47 @@ export function setupOverlay(
   const mergedOptions = { ...defaultOverlayOptions, ...options };
   let overlayContainer: HTMLElement | null = null;
   let isVisible = true;
+
+  // Override the highlightComponent method to use our custom duration and color
+  // This affects components that are already being highlighted during updates
+  const originalHighlightComponent = monitor.highlightComponent;
+  monitor.highlightComponent = function (
+    id: string,
+    color = mergedOptions.highlightColor,
+  ) {
+    // If highlighting is disabled, don't do anything
+    if (!mergedOptions.highlightRerenders) {
+      return;
+    }
+
+    const component = monitor.getComponentById(id);
+    if (!component || !component.el) {
+      return;
+    }
+
+    // Store original styles
+    const originalStyles = {
+      outline: component.el.style.outline,
+      outlineOffset: component.el.style.outlineOffset,
+      position: component.el.style.position,
+    };
+
+    // Apply highlight with our custom color
+    component.el.style.outline = `2px solid ${color || 'rgba(255, 105, 180, 0.3)'}`;
+    component.el.style.outlineOffset = '-2px';
+    if (component.el.style.position === 'static') {
+      component.el.style.position = 'relative';
+    }
+
+    // Restore after our custom duration
+    setTimeout(() => {
+      if (component.el) {
+        component.el.style.outline = originalStyles.outline;
+        component.el.style.outlineOffset = originalStyles.outlineOffset;
+        component.el.style.position = originalStyles.position;
+      }
+    }, mergedOptions.highlightDuration || 500);
+  };
 
   function createOverlay() {
     const overlay = document.createElement('div');
