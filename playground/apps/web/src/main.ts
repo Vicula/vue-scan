@@ -32,6 +32,9 @@ app.use(
     // Track memory usage
     trackMemory: true,
 
+    // Enable permanent component overlays
+    permanentComponentOverlays: true,
+
     // Enable memory profiling
     memoryProfiling: {
       enabled: true,

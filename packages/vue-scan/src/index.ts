@@ -69,6 +69,12 @@ export type VueScanOptions = {
    * @default true
    */
   trackRenderFrequency?: boolean;
+
+  /**
+   * Show permanent overlay on all registered components
+   * @default false
+   */
+  permanentComponentOverlays?: boolean;
 };
 
 const defaultOptions: VueScanOptions = {
@@ -81,6 +87,7 @@ const defaultOptions: VueScanOptions = {
   memoryTrackingInterval: 5000,
   trackMountTime: true,
   trackRenderFrequency: true,
+  permanentComponentOverlays: false,
 };
 
 export function createVueScan(options: VueScanOptions = {}) {

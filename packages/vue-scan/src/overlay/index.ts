@@ -150,6 +150,56 @@ export function setupOverlay(
       }
     });
 
+    // Add permanent overlays toggle button
+    const permanentOverlaysBtn = document.createElement('button');
+    permanentOverlaysBtn.textContent = monitor.options
+      .permanentComponentOverlays
+      ? 'Hide Overlays'
+      : 'Show Overlays';
+    permanentOverlaysBtn.style.marginRight = '5px';
+    permanentOverlaysBtn.style.padding = '3px 6px';
+    permanentOverlaysBtn.style.backgroundColor =
+      mergedOptions.theme === 'dark' ? '#555' : '#eee';
+    permanentOverlaysBtn.style.border = 'none';
+    permanentOverlaysBtn.style.borderRadius = '3px';
+    permanentOverlaysBtn.style.cursor = 'pointer';
+    permanentOverlaysBtn.style.color = 'inherit';
+
+    permanentOverlaysBtn.addEventListener('click', () => {
+      // Toggle the permanent overlays option
+      monitor.options.permanentComponentOverlays =
+        !monitor.options.permanentComponentOverlays;
+
+      // Update button text
+      permanentOverlaysBtn.textContent = monitor.options
+        .permanentComponentOverlays
+        ? 'Hide Overlays'
+        : 'Show Overlays';
+
+      // Apply or remove overlays from all existing components
+      monitor.components.forEach((component) => {
+        if (component.el) {
+          if (monitor.options.permanentComponentOverlays) {
+            // Add overlay
+            const overlayColor = 'rgba(0, 128, 255, 0.3)'; // Light blue semi-transparent
+            component.el.style.outline = `1px dashed ${overlayColor}`;
+            component.el.style.outlineOffset = '-1px';
+            component.el.setAttribute(
+              'data-vue-scan-component',
+              component.name,
+            );
+            component.el.setAttribute('data-vue-scan-id', component.id);
+          } else if (component.el.style.outline.includes('dashed')) {
+            // Remove overlay (only if it's our outline - don't remove highlight outlines)
+            component.el.style.outline = '';
+            component.el.style.outlineOffset = '';
+            component.el.removeAttribute('data-vue-scan-component');
+            component.el.removeAttribute('data-vue-scan-id');
+          }
+        }
+      });
+    });
+
     // Close button
     const closeBtn = document.createElement('button');
     closeBtn.textContent = 'X';
@@ -167,6 +217,7 @@ export function setupOverlay(
     });
 
     controls.appendChild(toggleBtn);
+    controls.appendChild(permanentOverlaysBtn);
     controls.appendChild(closeBtn);
 
     header.appendChild(title);

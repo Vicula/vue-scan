@@ -119,6 +119,20 @@ export function createPerformanceMonitor(
         metrics.el = instance.vnode.el as HTMLElement;
       }
 
+      // Apply permanent overlay to the component if enabled
+      if (options.permanentComponentOverlays && metrics.el) {
+        // Add a persistent outline to the element
+        const overlayColor = 'rgba(0, 128, 255, 0.3)'; // Light blue semi-transparent
+        metrics.el.style.outline = `1px dashed ${overlayColor}`;
+        metrics.el.style.outlineOffset = '-1px';
+
+        // Add component name as a data attribute for debugging
+        metrics.el.setAttribute('data-vue-scan-component', componentName);
+
+        // Add component ID as a data attribute
+        metrics.el.setAttribute('data-vue-scan-id', id);
+      }
+
       return metrics;
     },
 
