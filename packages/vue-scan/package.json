@@ -1,1 +1,53 @@
-{}
+{
+  "name": "vue-scan",
+  "version": "0.0.1",
+  "description": "Performance monitoring plugin for Vue.js applications",
+  "keywords": [
+    "vue",
+    "performance",
+    "monitor",
+    "profiler",
+    "devtools",
+    "plugin"
+  ],
+  "homepage": "https://github.com/Vicula/vue-scan",
+  "bugs": {
+    "url": "https://github.com/Vicula/vue-scan/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vicula/vue-scan.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Victor Carpenter",
+    "url": "https://github.com/Vicula"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "package.json", "README.md", "LICENSE"],
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "lint": "biome lint src && tsc --noEmit",
+    "format": "biome format src --write",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "peerDependencies": {
+    "vue": "^3.2.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vue": "^3.3.0",
+    "vitest": "^0.34.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
