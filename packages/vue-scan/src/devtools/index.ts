@@ -1,7 +1,7 @@
-import type { App } from 'vue';
 import type { PerformanceMonitor, ComponentMetrics } from '../core/monitor';
 import type { VueDevtoolsHook } from '../types/vue-devtools';
 import type { ComponentMemoryStats } from '../core/memory-profiler';
+import { setupMemoryProfilerPanel } from './memory-panel';
 
 // Custom DevTools events
 const DEVTOOLS_EVENTS = {
@@ -37,7 +37,7 @@ interface InspectorNode {
  * Sets up integration with Vue DevTools
  */
 export function setupDevtools(
-  app: App,
+  app: any,
   monitor: PerformanceMonitor,
 ): DevtoolsLayer {
   // Track whether DevTools is available
@@ -73,6 +73,11 @@ export function setupDevtools(
 
     if (!hook) {
       return;
+    }
+
+    // Set up memory profiler panel if memory tracking is enabled
+    if (monitor.options.trackMemory || monitor.options.detailedMemoryTracking) {
+      setupMemoryProfilerPanel();
     }
 
     // Register custom inspector
@@ -211,6 +216,16 @@ export function setupDevtools(
         type: 'memory-stats',
         data: formatMemoryStatsForDevtools(memoryStats),
       });
+
+      // Also make memory profiler available to DevTools
+      if (typeof window !== 'undefined') {
+        (window as any).$memoryProfiler = {
+          getStats: monitor.getMemoryStats.bind(monitor),
+          clearStats: monitor.clearMemoryStats?.bind(monitor),
+          startTracking: monitor.startMemoryTracking?.bind(monitor),
+          stopTracking: monitor.stopMemoryTracking?.bind(monitor),
+        };
+      }
     }
 
     function clearMemoryStats() {

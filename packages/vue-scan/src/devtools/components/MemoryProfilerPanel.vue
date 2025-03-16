@@ -43,22 +43,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, inject } from 'vue';
 
+/**
+ * The memory profiler panel connects to the memory profiler service
+ * to display memory usage statistics for Vue components.
+ */
 const isTracking = ref(false);
 const memoryStats = ref({});
 let memoryProfiler: any = null;
 
 // Check if Vue app has memory profiler available
 onMounted(() => {
-  // In DevTools context, this might need to be accessed differently
-  // This is a simplification - actual implementation depends on DevTools API
-  const vueApp = (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__?.Vue;
-
-  if (vueApp?.config?.globalProperties?.$memoryProfiler) {
-    memoryProfiler = vueApp.config.globalProperties.$memoryProfiler;
+  // First try to get the memory profiler from the window object (global instance)
+  if ((window as any).$memoryProfiler) {
+    memoryProfiler = (window as any).$memoryProfiler;
     updateStats();
+    return;
   }
+
+  // Next try to get from the Vue DevTools hook
+  const hook = (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__;
+  if (hook?.Vue?.config?.globalProperties?.$memoryProfiler) {
+    memoryProfiler = hook.Vue.config.globalProperties.$memoryProfiler;
+    updateStats();
+    return;
+  }
+
+  // Finally, check if we can get it from the parent app instance
+  const app = hook?.apps?.[0];
+  if (app?.config?.globalProperties?.$memoryProfiler) {
+    memoryProfiler = app.config.globalProperties.$memoryProfiler;
+    updateStats();
+    return;
+  }
+
+  console.warn('Memory profiler not found, panel will not function properly');
 });
 
 // Cleanup on unmount

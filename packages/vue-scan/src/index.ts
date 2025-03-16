@@ -105,6 +105,14 @@ export function createVueScan(options: VueScanOptions = {}) {
 
       if (mergedOptions.devtools) {
         setupDevtools(app, monitor);
+
+        // Memory profiler needs to be initialized before DevTools
+        if (mergedOptions.trackMemory || mergedOptions.detailedMemoryTracking) {
+          // Start memory tracking with the specified interval
+          memoryProfiler.startMemoryTracking(
+            mergedOptions.memoryTrackingInterval || 5000,
+          );
+        }
       }
 
       // Register the memory profile directive when detailed memory tracking is enabled
@@ -126,6 +134,12 @@ export function createVueScan(options: VueScanOptions = {}) {
             useMemoryProfile: useMemoryProfile,
             directive: vMemoryProfile,
           };
+
+          // Make memory profiler globally available for DevTools
+          if (typeof window !== 'undefined') {
+            (window as any).$memoryProfiler =
+              app.config.globalProperties.$memoryProfiler;
+          }
         }
       }
 
