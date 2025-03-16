@@ -1,45 +1,52 @@
 {
   "name": "vue-scan",
   "version": "0.0.1",
-  "description": "Scan your Vue app for renders",
-  "keywords": ["react", "react-scan", "react scan", "render", "performance"],
-  "homepage": "https://react-scan.million.dev",
+  "description": "Performance monitoring plugin for Vue.js applications",
+  "keywords": [
+    "vue",
+    "performance",
+    "monitor",
+    "profiler",
+    "devtools",
+    "plugin"
+  ],
+  "homepage": "https://github.com/Vicula/vue-scan",
   "bugs": {
-    "url": "https://github.com/aidenybai/react-scan/issues"
+    "url": "https://github.com/Vicula/vue-scan/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aidenybai/react-scan.git"
+    "url": "git+https://github.com/Vicula/vue-scan.git"
   },
   "license": "MIT",
   "author": {
     "name": "Victor Carpenter",
     "url": "https://github.com/Vicula"
   },
-  "bin": "bin/cli.js",
-  "files": ["dist", "bin", "package.json", "README.md", "LICENSE", "auto.d.ts"],
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "package.json", "README.md", "LICENSE"],
   "scripts": {
-    "dev:kitchen": "node dist/cli.js http://localhost:5173",
-    "build": "npm run build:css && NODE_ENV=production tsup",
-    "postbuild": "pnpm copy-astro && node ../../scripts/version-warning.mjs",
-    "build:copy": "npm run build:css && NODE_ENV=production tsup && cat dist/auto.global.js | pbcopy",
-    "copy-astro": "cp -R src/core/monitor/params/astro dist/core/monitor/params",
-    "dev:css": "postcss ./src/web/assets/css/styles.tailwind.css -o ./src/web/assets/css/styles.css --watch",
-    "dev:tsup": "NODE_ENV=development tsup --watch",
-    "dev": "pnpm copy-astro && npm-run-all --parallel dev:css dev:tsup",
-    "build:css": "postcss ./src/web/assets/css/styles.tailwind.css -o ./src/web/assets/css/styles.css",
-    "pack": "npm version patch && pnpm build && npm pack",
-    "pack:bump": "bun scripts/bump-version.js && nr pack && echo $(pwd)/react-scan-$(node -p \"require('./package.json').version\").tgz | pbcopy",
-    "prettier": "prettier --config .prettierrc.mjs -w src",
-    "publint": "publint",
-    "test": "vitest",
-    "lint": "biome lint src && pnpm typecheck",
-    "format": "biome format . --write",
-    "check": "biome check . --write",
-    "typecheck": "tsc --noEmit"
+    "dev": "vite build --watch",
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "lint": "biome lint src && tsc --noEmit",
+    "format": "biome format src --write",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "peerDependencies": {
+    "vue": "^3.2.0"
   },
   "dependencies": {},
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vue": "^3.3.0",
+    "vitest": "^0.34.0"
+  },
   "publishConfig": {
     "access": "public"
   }
