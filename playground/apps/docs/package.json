@@ -9,16 +9,14 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "lint": "eslint ."
+    "lint": "biome lint . --apply"
   },
   "dependencies": {
     "ui": "workspace:*"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@nuxt/devtools": "latest",
-    "@nuxtjs/eslint-config-typescript": "^12.1.0",
-    "eslint": "^8.57.0",
-    "eslint-config-custom": "workspace:*",
     "nuxt": "^3.10.3",
     "tsconfig": "workspace:*",
     "vue": "^3.5.13",

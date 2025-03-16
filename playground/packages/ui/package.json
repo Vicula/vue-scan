@@ -5,10 +5,10 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "scripts": {
-    "lint": "eslint ."
+    "lint": "biome lint . --apply"
   },
   "devDependencies": {
-    "eslint-config-custom": "workspace:*",
+    "@biomejs/biome": "^1.9.4",
     "tsconfig": "workspace:*",
     "vue": "^3.5.13"
   }
