@@ -57,5 +57,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@vue/devtools-api": "^7.7.2"
   }
 }

@@ -1,4 +1,4 @@
-import type { VueDevtoolsHook } from '../types/vue-devtools';
+import { getPluginApi } from './utils';
 import type { ComponentMemoryStats } from '../core/memory-profiler';
 import memoryProfiler from '../core/memory-profiler';
 
@@ -11,64 +11,137 @@ export function setupMemoryProfilerPanel() {
     return;
   }
 
-  // Check if DevTools is available
-  if (
-    typeof window === 'undefined' ||
-    typeof (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ === 'undefined'
-  ) {
+  // Get the DevTools API
+  const api = getPluginApi();
+  if (!api) {
     console.debug(
-      '[Vue Scan] DevTools not detected, skipping memory panel setup',
+      '[Vue Scan] DevTools API not available, skipping memory panel setup',
     );
     return;
   }
 
-  const hook = (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ as VueDevtoolsHook;
-  if (!hook) {
-    return;
+  // Make memory profiler available globally for debugging
+  if (typeof window !== 'undefined') {
+    (window as any).$memoryProfiler = {
+      getStats: memoryProfiler.getMemoryStats,
+      clearStats: memoryProfiler.clearMemoryStats,
+      startTracking: memoryProfiler.startMemoryTracking,
+      stopTracking: memoryProfiler.stopMemoryTracking,
+    };
   }
 
-  // Make memory profiler available globally for devtools
-  (window as any).$memoryProfiler = {
-    getStats: memoryProfiler.getMemoryStats,
-    clearStats: memoryProfiler.clearMemoryStats,
-    startTracking: memoryProfiler.startMemoryTracking,
-    stopTracking: memoryProfiler.stopMemoryTracking,
-  };
-
-  // Set up custom panel for memory profiler
-  hook.on('app:init', () => {
-    // Register panel action
-    hook.emit('register-command', {
-      id: 'vue-scan:memory-profiler',
-      title: 'Open Memory Profiler',
-      icon: 'memory',
-      action: () => {
-        // Open memory profiler panel
-        sendMemoryStatsToDevtools(hook);
+  // Register the memory panel inspector
+  api.addInspector({
+    id: 'vue-scan-memory',
+    label: 'Memory Profiler',
+    icon: 'memory',
+    treeFilterPlaceholder: 'Search components...',
+    actions: [
+      {
+        icon: 'refresh',
+        tooltip: 'Refresh memory stats',
+        action: () => {
+          sendMemoryStatsToDevtools();
+        },
       },
-    });
+      {
+        icon: 'delete',
+        tooltip: 'Clear memory stats',
+        action: () => {
+          memoryProfiler.clearMemoryStats();
+          sendMemoryStatsToDevtools();
+        },
+      },
+    ],
   });
 
-  // Start periodic updates
-  let memoryStatsIntervalId: number | null = null;
-  memoryStatsIntervalId = window.setInterval(() => {
-    sendMemoryStatsToDevtools(hook);
-  }, 2000) as unknown as number;
+  // Set up custom timeline event
+  api.addTimelineLayer({
+    id: 'vue-scan-memory-timeline',
+    label: 'Memory Usage',
+    color: 0x8c6fef,
+  });
 
   // Start memory tracking
   memoryProfiler.startMemoryTracking(2000);
-}
 
-/**
- * Sends memory stats to DevTools
- */
-function sendMemoryStatsToDevtools(hook: VueDevtoolsHook) {
-  const stats = memoryProfiler.getMemoryStats();
+  // Start periodic updates
+  const intervalId = setInterval(() => {
+    sendMemoryStatsToDevtools();
+  }, 2000);
 
-  hook.emit('custom-inspect-state', {
-    type: 'memory-stats',
-    data: formatMemoryStatsForDevtools(stats),
-  });
+  // Clean up on app unmount
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', () => {
+      clearInterval(intervalId);
+    });
+  }
+
+  // Send initial data
+  setTimeout(() => {
+    sendMemoryStatsToDevtools();
+  }, 500);
+
+  /**
+   * Sends memory stats to DevTools
+   */
+  function sendMemoryStatsToDevtools() {
+    if (!api) {
+      return;
+    }
+
+    const stats = memoryProfiler.getMemoryStats();
+    const formattedStats = formatMemoryStatsForDevtools(stats);
+
+    // Send to inspector
+    api.sendInspectorState('vue-scan-memory', formattedStats);
+
+    // Group components by name
+    const componentMap = new Map<string, ComponentMemoryStats>();
+    Object.entries(stats).forEach(([name, stat]) => {
+      componentMap.set(name, stat);
+    });
+
+    // Build inspector tree
+    const nodes = Array.from(componentMap.entries()).map(([name, stat]) => ({
+      id: name,
+      label: name,
+      tags: [
+        {
+          label: `${stat.instanceCount} instances`,
+          color: 0x42b883,
+        },
+        {
+          label: `${(stat.averageHeapUsed / (1024 * 1024)).toFixed(2)} MB`,
+          color: getMemoryColor(stat.averageHeapUsed),
+        },
+      ],
+    }));
+
+    // Send tree to inspector
+    api.sendInspectorTree('vue-scan-memory', nodes);
+
+    // Also record in timeline if available
+    if (api.addTimelineEvent) {
+      const totalMemory = Object.values(stats).reduce(
+        (total, stat) => total + stat.lastHeapUsed,
+        0,
+      );
+
+      api.addTimelineEvent({
+        layerId: 'vue-scan-memory-timeline',
+        event: {
+          time: Date.now(),
+          data: {
+            total: (totalMemory / (1024 * 1024)).toFixed(2) + ' MB',
+            components: Object.keys(stats).length,
+          },
+          title: 'Memory Usage',
+          groupId: 'vue-scan-memory',
+        },
+      });
+    }
+  }
 }
 
 /**
@@ -77,21 +150,36 @@ function sendMemoryStatsToDevtools(hook: VueDevtoolsHook) {
 function formatMemoryStatsForDevtools(
   stats: Record<string, ComponentMemoryStats>,
 ): Record<string, any> {
-  const formattedStats: Record<string, any> = {};
+  const sections: Record<string, any> = {
+    summary: {
+      'Total Components': Object.keys(stats).length,
+      'Total Instances': Object.values(stats).reduce(
+        (sum, stat) => sum + stat.instanceCount,
+        0,
+      ),
+      'Average Heap Per Component': formatByteSize(
+        Object.values(stats).reduce(
+          (sum, stat) => sum + stat.averageHeapUsed,
+          0,
+        ) / Math.max(Object.keys(stats).length, 1),
+      ),
+    },
+  };
 
-  for (const [componentName, stat] of Object.entries(stats)) {
-    formattedStats[componentName] = {
+  // Add component-specific sections
+  Object.entries(stats).forEach(([componentName, stat]) => {
+    sections[componentName] = {
       'Component Name': componentName,
       'Instance Count': stat.instanceCount,
-      'Current Heap (MB)': formatByteSize(stat.lastHeapUsed),
-      'Average Heap (MB)': formatByteSize(stat.averageHeapUsed),
-      'Maximum Heap (MB)': formatByteSize(stat.maxHeapUsed),
-      'Minimum Heap (MB)': formatByteSize(stat.minHeapUsed),
+      'Current Heap': formatByteSize(stat.lastHeapUsed),
+      'Average Heap': formatByteSize(stat.averageHeapUsed),
+      'Maximum Heap': formatByteSize(stat.maxHeapUsed),
+      'Minimum Heap': formatByteSize(stat.minHeapUsed),
       'Snapshot Count': stat.snapshots.length,
     };
-  }
+  });
 
-  return formattedStats;
+  return sections;
 }
 
 /**
@@ -99,4 +187,22 @@ function formatMemoryStatsForDevtools(
  */
 function formatByteSize(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+/**
+ * Returns a color based on memory usage
+ */
+function getMemoryColor(bytes: number): number {
+  const mb = bytes / (1024 * 1024);
+
+  if (mb < 1) {
+    return 0x42b883; // Green for < 1MB
+  }
+  if (mb < 5) {
+    return 0xe6c029; // Yellow for < 5MB
+  }
+  if (mb < 20) {
+    return 0xf1662a; // Orange for < 20MB
+  }
+  return 0xd71d1d; // Red for >= 20MB
 }

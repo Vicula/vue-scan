@@ -1,44 +1,25 @@
-import type { VueDevtoolsHook } from '../types/vue-devtools';
-import { defineCustomPanel } from './utils';
-import MemoryProfilerPanel from './components/MemoryProfilerPanel.vue';
+import type { App } from 'vue';
+import { setupVueScanDevtoolsPlugin } from './utils';
+import { setupMemoryProfilerPanel } from './memory-panel';
 
 /**
- * Registers custom panels in Vue DevTools
+ * Registers custom panels and views in Vue DevTools using the official API
  */
-export function registerCustomPanels(app: any): void {
+export function registerCustomPanels(app: App): void {
   // Only run in development
   if (process.env.NODE_ENV === 'production') {
     return;
   }
 
-  // Check if DevTools is available
-  if (
-    typeof window === 'undefined' ||
-    typeof (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ === 'undefined'
-  ) {
-    console.debug(
-      '[Vue Scan] DevTools not detected, skipping custom panels registration',
-    );
-    return;
-  }
+  try {
+    // Set up the Vue Scan DevTools plugin with the official API
+    setupVueScanDevtoolsPlugin(app);
 
-  const hook = (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ as VueDevtoolsHook;
-  if (!hook) {
-    return;
-  }
+    // Set up memory profiler panel
+    setupMemoryProfilerPanel();
 
-  // Register memory profiler panel
-  hook.on('app:init', (app) => {
-    // Register memory profiler panel
-    defineCustomPanel({
-      id: 'vue-scan-memory-profiler',
-      label: 'Memory Profiler',
-      icon: 'memory',
-      component: MemoryProfilerPanel,
-      // This will be available as props in the component
-      props: {
-        // Add any props you want to pass to the panel
-      },
-    });
-  });
+    console.log('[Vue Scan] Custom panels registered with DevTools');
+  } catch (err) {
+    console.error('[Vue Scan] Error registering DevTools panels:', err);
+  }
 }

@@ -110,7 +110,7 @@ function updateStats() {
 let statsInterval;
 onMounted(() => {
   // Start memory tracking
-  memoryProfiler.startTracking(2000);
+  memoryProfiler.startMemoryTracking(2000);
 
   // Update stats regularly
   statsInterval = setInterval(() => {

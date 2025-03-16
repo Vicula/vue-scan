@@ -76,8 +76,8 @@ const defaultOptions: VueScanOptions = {
   overlay: true,
   devtools: true,
   ignore: [],
-  trackMemory: false,
-  detailedMemoryTracking: false,
+  trackMemory: true,
+  detailedMemoryTracking: true,
   memoryTrackingInterval: 5000,
   trackMountTime: true,
   trackRenderFrequency: true,
@@ -103,22 +103,21 @@ export function createVueScan(options: VueScanOptions = {}) {
         setupOverlay(app, monitor);
       }
 
+      // Force memory tracking to be enabled
+      mergedOptions.trackMemory = true;
+      mergedOptions.detailedMemoryTracking = true;
+
       if (mergedOptions.devtools) {
         setupDevtools(app, monitor);
 
-        // Memory profiler needs to be initialized before DevTools
-        if (mergedOptions.trackMemory || mergedOptions.detailedMemoryTracking) {
-          // Start memory tracking with the specified interval
-          memoryProfiler.startMemoryTracking(
-            mergedOptions.memoryTrackingInterval || 5000,
-          );
-        }
+        // Memory profiler needs to be initialized regardless of options
+        memoryProfiler.startMemoryTracking(
+          mergedOptions.memoryTrackingInterval || 5000,
+        );
       }
 
-      // Register the memory profile directive when detailed memory tracking is enabled
-      if (mergedOptions.detailedMemoryTracking) {
-        app.directive('memory-profile', vMemoryProfile);
-      }
+      // Register the memory profile directive
+      app.directive('memory-profile', vMemoryProfile);
 
       // Expose the monitor on the Vue instance for debugging
       if (process.env.NODE_ENV !== 'production') {
