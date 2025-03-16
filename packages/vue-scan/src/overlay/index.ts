@@ -93,7 +93,8 @@ export function setupOverlay(
     toggleBtn.style.color = 'inherit';
 
     toggleBtn.addEventListener('click', () => {
-      const content = overlay.querySelector('.vue-scan-content');
+      const content: HTMLElement | null =
+        overlay.querySelector('.vue-scan-content');
       if (content) {
         const isHidden = content.style.display === 'none';
         content.style.display = isHidden ? 'block' : 'none';
@@ -140,10 +141,14 @@ export function setupOverlay(
     }
 
     // Skip updates if overlay is hidden
-    if (!isVisible) return;
+    if (!isVisible) {
+      return;
+    }
 
     const content = overlayContainer.querySelector('.vue-scan-content');
-    if (!content) return;
+    if (!content) {
+      return;
+    }
 
     // Clear the current content
     content.innerHTML = '';

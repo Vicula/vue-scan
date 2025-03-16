@@ -70,7 +70,9 @@ export function createVueScan(options: VueScanOptions = {}) {
   // Don't include plugin in production unless explicitly enabled
   if (!mergedOptions.enabled) {
     return {
-      install() {}, // No-op
+      install() {
+        //
+      }, // No-op
     };
   }
 

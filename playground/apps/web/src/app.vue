@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import Demo from './components/demo.vue';
+import * as ComponentDemo from './components/demo.vue';
 
 const appName = 'Vue Scan Demo';
 </script>
@@ -16,7 +15,7 @@ const appName = 'Vue Scan Demo';
     </header>
     
     <main>
-      <Demo />
+      <ComponentDemo />
     </main>
     
     <footer>

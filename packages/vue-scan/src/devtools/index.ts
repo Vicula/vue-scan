@@ -1,5 +1,6 @@
 import type { App } from 'vue';
 import type { PerformanceMonitor, ComponentMetrics } from '../core/monitor';
+import type { VueDevtoolsHook } from '../types/vue-devtools';
 
 // Custom DevTools events
 const DEVTOOLS_EVENTS = {
@@ -17,6 +18,18 @@ export interface DevtoolsLayer {
   dispose: () => void;
 }
 
+// DevTools inspector node types
+interface InspectorNode {
+  id: string;
+  label: string;
+  tags?: Array<{
+    label: string;
+    textColor: number;
+    backgroundColor: number;
+  }>;
+  children?: InspectorNode[];
+}
+
 /**
  * Sets up integration with Vue DevTools
  */
@@ -28,12 +41,17 @@ export function setupDevtools(
   let devtoolsAvailable = false;
 
   // Reference to overlay controller
-  let overlayController: any = null;
+  let overlayController: {
+    toggle: () => void;
+    [key: string]: any;
+  } | null = null;
 
   // Check if DevTools is available
-  function checkDevToolsAvailability() {
-    // @ts-ignore
-    return window.__VUE_DEVTOOLS_GLOBAL_HOOK__ !== undefined;
+  function checkDevToolsAvailability(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      typeof (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined'
+    );
   }
 
   function setup() {
@@ -44,10 +62,12 @@ export function setupDevtools(
       return;
     }
 
-    // @ts-ignore - Access the DevTools hook
-    const hook = window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
+    const hook = (window as any)
+      .__VUE_DEVTOOLS_GLOBAL_HOOK__ as VueDevtoolsHook;
 
-    if (!hook) return;
+    if (!hook) {
+      return;
+    }
 
     // Register custom inspector
     hook.on('init', () => {
@@ -89,7 +109,7 @@ export function setupDevtools(
     });
 
     // Handle component selection in DevTools
-    hook.on('inspector:select-node', async (nodeId: string) => {
+    hook.on('inspector:select-node', (nodeId: string) => {
       if (typeof nodeId === 'string') {
         // Check if any of our components match this ID
         const componentId = nodeId.toString();
@@ -152,11 +172,15 @@ export function setupDevtools(
   }
 
   function sendRender(componentMetrics: ComponentMetrics) {
-    if (!devtoolsAvailable) return;
+    if (!devtoolsAvailable) {
+      return;
+    }
 
-    // @ts-ignore
-    const hook = window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
-    if (!hook) return;
+    const hook = (window as any)
+      .__VUE_DEVTOOLS_GLOBAL_HOOK__ as VueDevtoolsHook;
+    if (!hook) {
+      return;
+    }
 
     // Send render event to DevTools
     hook.emit(DEVTOOLS_EVENTS.COMPONENT_RENDER, {
@@ -172,11 +196,15 @@ export function setupDevtools(
   }
 
   function updateAllComponentsForDevtools() {
-    if (!devtoolsAvailable) return;
+    if (!devtoolsAvailable) {
+      return;
+    }
 
-    // @ts-ignore
-    const hook = window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
-    if (!hook) return;
+    const hook = (window as any)
+      .__VUE_DEVTOOLS_GLOBAL_HOOK__ as VueDevtoolsHook;
+    if (!hook) {
+      return;
+    }
 
     // Generate tree structure for inspector
     const tree = generateComponentTree();
@@ -188,7 +216,7 @@ export function setupDevtools(
     });
   }
 
-  function generateComponentTree() {
+  function generateComponentTree(): InspectorNode[] {
     // Organize components by name for a more organized tree
     const componentsByName = new Map<string, ComponentMetrics[]>();
 
@@ -225,7 +253,7 @@ export function setupDevtools(
     });
   }
 
-  function createComponentNode(component: ComponentMetrics) {
+  function createComponentNode(component: ComponentMetrics): InspectorNode {
     // Get color based on render performance
     const color = getColorForRenderTime(component.averageRenderTime);
 
@@ -264,7 +292,7 @@ export function setupDevtools(
     }
   }
 
-  function highlightSlowComponents() {
+  function highlightSlowComponents(): void {
     // Find components that render slower than 16ms (60fps threshold)
     const slowComponents = Array.from(monitor.components.values()).filter(
       (component) => component.averageRenderTime > 16,
@@ -289,7 +317,9 @@ export function setupDevtools(
     }
   }
 
-  function formatComponentForDevtools(component: ComponentMetrics) {
+  function formatComponentForDevtools(
+    component: ComponentMetrics,
+  ): Record<string, string | number> {
     return {
       id: component.id,
       name: component.name,
@@ -312,11 +342,15 @@ export function setupDevtools(
   }
 
   function dispose() {
-    if (!devtoolsAvailable) return;
+    if (!devtoolsAvailable) {
+      return;
+    }
 
-    // @ts-ignore
-    const hook = window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
-    if (!hook) return;
+    const hook = (window as any)
+      .__VUE_DEVTOOLS_GLOBAL_HOOK__ as VueDevtoolsHook;
+    if (!hook) {
+      return;
+    }
 
     // Clean up listeners
     const events = Object.values(DEVTOOLS_EVENTS);
@@ -336,7 +370,7 @@ export function setupDevtools(
   setup();
 
   // Store reference to overlay controller if created
-  if (app.config.globalProperties.$vueScanOverlay) {
+  if (typeof app.config.globalProperties.$vueScanOverlay !== 'undefined') {
     overlayController = app.config.globalProperties.$vueScanOverlay;
   }
 

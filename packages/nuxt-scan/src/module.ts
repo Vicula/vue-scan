@@ -1,6 +1,5 @@
-import { defineNuxtModule, addPlugin, createResolver } from '@nuxt/kit';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { defineNuxtModule, addPluginTemplate } from '@nuxt/kit';
+import { resolve, join } from 'path';
 
 // Define module options type same as Vue Scan options
 export interface ModuleOptions {
@@ -39,16 +38,17 @@ export default defineNuxtModule<ModuleOptions>({
       return;
     }
 
-    // Create resolver to locate plugin file
-    const { resolve } = createResolver(import.meta.url);
-    const runtimeDir = fileURLToPath(new URL('./runtime', import.meta.url));
-
-    // Add the plugin
-    addPlugin({
-      src: resolve(runtimeDir, 'plugin'),
-      mode: 'client',
+    // Add plugin template
+    addPluginTemplate({
+      filename: 'vue-scan.mjs',
+      src: resolve(__dirname, './runtime/plugin.ts'),
       options,
     });
+
+    // Make options available via runtimeConfig
+    nuxt.options.runtimeConfig = nuxt.options.runtimeConfig || {};
+    nuxt.options.runtimeConfig.public = nuxt.options.runtimeConfig.public || {};
+    nuxt.options.runtimeConfig.public.vueScan = options;
 
     // Log info
     console.log('Vue Scan initialized in Nuxt.js');
