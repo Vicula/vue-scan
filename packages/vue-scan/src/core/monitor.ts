@@ -70,6 +70,14 @@ export interface PerformanceMonitor {
 
   // Testing utility
   triggerHighlightAll: () => void;
+
+  // DOM component scanning
+  scanDOMForComponents: () => number;
+  startPeriodicDOMScan: (intervalMs?: number) => void;
+  stopPeriodicDOMScan: () => void;
+
+  // Private properties
+  _domScanInterval?: number | null;
 }
 
 /**
@@ -134,8 +142,36 @@ export function createPerformanceMonitor(
       const id = instance.uid.toString();
       const file = (instance.type as any).__file;
 
+      // Try to get the DOM element
+      let el: HTMLElement | undefined;
+
+      // First check if the instance.vnode.el exists and is an HTMLElement
+      if (instance.vnode.el instanceof HTMLElement) {
+        el = instance.vnode.el;
+      }
+      // If not, try to get the DOM element from the component's $el property
+      else if (
+        instance.proxy &&
+        (instance.proxy as any).$el instanceof HTMLElement
+      ) {
+        el = (instance.proxy as any).$el;
+      }
+      // For functional components or those with fragment roots
+      else if (instance.subTree?.el instanceof HTMLElement) {
+        el = instance.subTree.el;
+      }
+
+      // Get first HTMLElement child if we have a comment node or fragment
+      if (el && el.nodeType === Node.COMMENT_NODE && el.nextElementSibling) {
+        el = el.nextElementSibling as HTMLElement;
+      }
+
       if (!components.has(id)) {
         // Add new component to tracking
+        console.log(
+          `Registering new component: ${componentName} (${id}), has element: ${!!el}`,
+        );
+
         components.set(id, {
           id,
           name: componentName,
@@ -145,14 +181,15 @@ export function createPerformanceMonitor(
           averageRenderTime: 0,
           totalRenderTime: 0,
           events: [],
-          el: (instance.vnode.el as HTMLElement) || undefined,
+          el: el,
         });
       }
 
-      // Update element reference if it changed
+      // Update element reference if it changed or we didn't have one before
       const metrics = components.get(id)!;
-      if (instance.vnode.el && instance.vnode.el !== metrics.el) {
-        metrics.el = instance.vnode.el as HTMLElement;
+      if (el && (!metrics.el || el !== metrics.el)) {
+        console.log(`Updating element reference for ${componentName} (${id})`);
+        metrics.el = el;
       }
 
       // Apply permanent overlay to the component if enabled
@@ -308,6 +345,147 @@ export function createPerformanceMonitor(
         }, index * 500); // Stagger the highlights
       });
     },
+
+    // Add a method to scan the DOM for Vue components
+    scanDOMForComponents() {
+      // Collect all potential Vue component elements using different selectors
+      // Vue 3 often adds data-v-* attributes for scoped styles
+      const dataVElements = Array.from(document.querySelectorAll('[data-v-]'));
+
+      // Vue also often adds __vue_ attribute
+      const vueInternalElements = Array.from(
+        document.querySelectorAll('[__vue_]'),
+      );
+
+      // Many Vue libraries add specific classes
+      const vueClasses = Array.from(document.querySelectorAll('.v-*, .vue-*'));
+
+      // Components with v-* directives
+      const vDirectives = Array.from(document.querySelectorAll('[v-*]'));
+
+      // Nuxt-specific elements
+      const nuxtElements = Array.from(
+        document.querySelectorAll('[nuxt], [data-nuxt], .nuxt-*'),
+      );
+
+      // Combine all sets and remove duplicates
+      const allElements = [
+        ...new Set([
+          ...dataVElements,
+          ...vueInternalElements,
+          ...vueClasses,
+          ...vDirectives,
+          ...nuxtElements,
+        ]),
+      ];
+
+      let newComponentsCount = 0;
+
+      console.log(
+        `Found ${allElements.length} potential Vue component elements in DOM`,
+      );
+
+      // Try to register any components we missed
+      allElements.forEach((el) => {
+        // Skip if element is already tracked by a component
+        const isAlreadyTracked = Array.from(components.values()).some(
+          (comp) => {
+            if (!comp.el) {
+              return false;
+            }
+            return (
+              comp.el === el ||
+              comp.el.contains(el as Node) ||
+              el.contains(comp.el)
+            );
+          },
+        );
+
+        if (!isAlreadyTracked && el instanceof HTMLElement) {
+          // Generate a unique ID for this element
+          const domId = `dom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+          // Try to get a meaningful name for the component
+          let componentName = el.tagName.toLowerCase();
+
+          // Check for component name in various attributes
+          const dataComponent =
+            el.getAttribute('data-component') ||
+            el.getAttribute('data-vue-component') ||
+            el.getAttribute('data-nuxt-component');
+
+          if (dataComponent) {
+            componentName = dataComponent;
+          } else {
+            // Try to extract component name from classes
+            const classes = Array.from(el.classList);
+            const vueClass = classes.find(
+              (cls) => cls.startsWith('v-') || cls.startsWith('vue-'),
+            );
+            if (vueClass) {
+              componentName = vueClass;
+            } else {
+              // Use tag name with classes as fallback
+              const elClasses = classes.join(' ');
+              componentName = `${componentName}${elClasses ? '.' + elClasses.replace(/\s+/g, '.') : ''}`;
+            }
+          }
+
+          // Register as a new component
+          components.set(domId, {
+            id: domId,
+            name: componentName,
+            file: undefined,
+            renderCount: 0,
+            lastRenderTime: 0,
+            averageRenderTime: 0,
+            totalRenderTime: 0,
+            events: [],
+            el: el,
+            mountTime: performance.now(),
+          });
+
+          // Apply overlay if enabled
+          if (options.permanentComponentOverlays) {
+            const overlayColor = 'rgba(255, 0, 0, 0.5)';
+            el.style.outline = `2px solid ${overlayColor}`;
+            el.style.outlineOffset = '-2px';
+            el.setAttribute('data-vue-scan-component', componentName);
+            el.setAttribute('data-vue-scan-id', domId);
+          }
+
+          newComponentsCount++;
+        }
+      });
+
+      console.log(`Added ${newComponentsCount} new components from DOM scan`);
+      return newComponentsCount;
+    },
+
+    // Periodic scan interval reference
+    _domScanInterval: null as number | null,
+
+    // Start periodic DOM scanning
+    startPeriodicDOMScan(intervalMs = 5000) {
+      // Clear any existing interval
+      this.stopPeriodicDOMScan();
+
+      // Start a new interval
+      this._domScanInterval = window.setInterval(() => {
+        this.scanDOMForComponents();
+      }, intervalMs);
+
+      console.log(`Started periodic DOM scan every ${intervalMs}ms`);
+    },
+
+    // Stop periodic DOM scanning
+    stopPeriodicDOMScan() {
+      if (this._domScanInterval) {
+        window.clearInterval(this._domScanInterval);
+        this._domScanInterval = null;
+        console.log('Stopped periodic DOM scan');
+      }
+    },
   };
 
   // Start memory tracking if enabled
@@ -326,62 +504,64 @@ export function createPerformanceMonitor(
         return;
       }
 
-      const componentMetrics = monitor.trackComponent(instance);
-      // Return early if component metrics aren't available (e.g., in ignore list)
-      if (!componentMetrics) {
-        return;
-      }
-
-      // Apply memory profiling to all tracked components if memory tracking is enabled
-      if (options.trackMemory) {
-        const componentName = componentMetrics.name;
-        useMemoryProfile(componentName);
-      }
-
+      // Set up the lifecycle hooks in beforeCreate
       // Track mount time
       if (options.trackMountTime) {
         onMounted(() => {
-          if (componentMetrics) {
-            componentMetrics.mountTime = performance.now();
+          // Get the instance again in the mounted hook to ensure it's still valid
+          const instance = getCurrentInstance();
+          if (!instance) {
+            return;
+          }
 
-            // Add this debug message to verify mounting is happening
-            console.log(
-              `Component mounted: ${componentMetrics.name} (${componentMetrics.id})`,
-            );
+          // Track the component after it's mounted so we have the DOM element
+          const componentMetrics = monitor.trackComponent(instance);
+          if (!componentMetrics) {
+            return;
+          }
 
-            // Also trigger the measurement on mount to ensure we get at least one measurement
-            if (options.trackRenderFrequency) {
-              const startTime = performance.now();
-              activeRenders.add(componentMetrics.id);
+          componentMetrics.mountTime = performance.now();
 
-              // Use microtask to measure render duration
-              queueMicrotask(() => {
-                if (!componentMetrics) {
-                  console.log(
-                    'componentMetrics is undefined in mount microtask',
-                  );
-                  return;
-                }
+          // Debug message to verify mounting is happening
+          console.log(
+            `Component mounted: ${componentMetrics.name} (${componentMetrics.id})`,
+          );
 
-                const endTime = performance.now();
-                const renderTime = endTime - startTime;
+          // Apply memory profiling if needed
+          if (options.trackMemory) {
+            const componentName = componentMetrics.name;
+            useMemoryProfile(componentName);
+          }
 
-                componentMetrics.renderCount++;
-                componentMetrics.lastRenderTime = renderTime;
-                componentMetrics.totalRenderTime += renderTime;
-                componentMetrics.averageRenderTime =
-                  componentMetrics.totalRenderTime /
-                  componentMetrics.renderCount;
+          // Trigger measurement on mount
+          if (options.trackRenderFrequency) {
+            const startTime = performance.now();
+            activeRenders.add(componentMetrics.id);
 
-                activeRenders.delete(componentMetrics.id);
+            // Use microtask to measure render duration
+            queueMicrotask(() => {
+              if (!componentMetrics) {
+                console.log('componentMetrics is undefined in mount microtask');
+                return;
+              }
 
-                // Flash the component in the UI on mount
-                console.log(
-                  `Highlighting component on mount: ${componentMetrics.name}`,
-                );
-                monitor.highlightComponent(componentMetrics.id);
-              });
-            }
+              const endTime = performance.now();
+              const renderTime = endTime - startTime;
+
+              componentMetrics.renderCount++;
+              componentMetrics.lastRenderTime = renderTime;
+              componentMetrics.totalRenderTime += renderTime;
+              componentMetrics.averageRenderTime =
+                componentMetrics.totalRenderTime / componentMetrics.renderCount;
+
+              activeRenders.delete(componentMetrics.id);
+
+              // Flash the component in the UI on mount
+              console.log(
+                `Highlighting component on mount: ${componentMetrics.name}`,
+              );
+              monitor.highlightComponent(componentMetrics.id);
+            });
           }
         });
       }
@@ -389,6 +569,13 @@ export function createPerformanceMonitor(
       // Track render time and frequency
       if (options.trackRenderFrequency) {
         onUpdated(() => {
+          const instance = getCurrentInstance();
+          if (!instance) {
+            return;
+          }
+
+          // Get metrics - this will register the component if it's not yet registered
+          const componentMetrics = monitor.trackComponent(instance);
           if (!componentMetrics) {
             console.log('componentMetrics is undefined in onUpdated hook');
             return;
@@ -427,6 +614,15 @@ export function createPerformanceMonitor(
 
       // Clean up on unmount
       onUnmounted(() => {
+        const instance = getCurrentInstance();
+        if (!instance) {
+          return;
+        }
+
+        // We may not have tracked this component yet if it was unmounted before tracking
+        const id = instance.uid.toString();
+        const componentMetrics = components.get(id);
+
         if (componentMetrics) {
           componentMetrics.unmountTime = performance.now();
         }

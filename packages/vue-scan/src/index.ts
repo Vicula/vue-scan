@@ -75,6 +75,18 @@ export type VueScanOptions = {
    * @default false
    */
   permanentComponentOverlays?: boolean;
+
+  /**
+   * Enable DOM scanning to find components not captured through lifecycle hooks
+   * @default true
+   */
+  enableDOMScanning?: boolean;
+
+  /**
+   * Interval for DOM scanning in milliseconds
+   * @default 5000
+   */
+  domScanningInterval?: number;
 };
 
 const defaultOptions: VueScanOptions = {
@@ -88,6 +100,8 @@ const defaultOptions: VueScanOptions = {
   trackMountTime: true,
   trackRenderFrequency: true,
   permanentComponentOverlays: false,
+  enableDOMScanning: true,
+  domScanningInterval: 5000,
 };
 
 export function createVueScan(options: VueScanOptions = {}) {
@@ -165,6 +179,19 @@ export function createVueScan(options: VueScanOptions = {}) {
             });
           }
         }, 1000); // Wait 1 second for components to render
+      }
+
+      // Run an initial DOM scan after components are mounted
+      if (mergedOptions.enableDOMScanning) {
+        setTimeout(() => {
+          console.log('Running initial DOM scan for components');
+          monitor.scanDOMForComponents();
+
+          // Start periodic DOM scanning
+          monitor.startPeriodicDOMScan(
+            mergedOptions.domScanningInterval || 5000,
+          );
+        }, 2000); // Wait 2 seconds to allow initial components to mount
       }
 
       // Expose the monitor on the Vue instance for debugging
