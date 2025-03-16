@@ -1,6 +1,9 @@
 import { getPluginApi } from './utils';
 import type { ComponentMemoryStats } from '../core/memory-profiler';
 import memoryProfiler from '../core/memory-profiler';
+// Import the MemoryProfilerPanel component
+import MemoryProfilerPanel from './components/MemoryProfilerPanel.vue';
+import { defineCustomPanel } from './utils';
 
 /**
  * Sets up memory profiler panel in Vue DevTools
@@ -29,6 +32,14 @@ export function setupMemoryProfilerPanel() {
       stopTracking: memoryProfiler.stopMemoryTracking,
     };
   }
+
+  // Define the custom memory profiler panel
+  defineCustomPanel({
+    id: 'vue-scan-memory-panel',
+    label: 'Memory Profiler',
+    icon: 'memory',
+    component: MemoryProfilerPanel,
+  });
 
   // Register the memory panel inspector
   api.addInspector({

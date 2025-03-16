@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, inject } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 /**
  * The memory profiler panel connects to the memory profiler service

@@ -9,6 +9,10 @@ declare module 'vue' {
   export const onUnmounted: (fn: () => void) => void;
   export const onBeforeUnmount: (fn: () => void) => void;
   export const nextTick: (fn?: () => void) => Promise<void>;
+  export const ref: <T>(value: T) => { value: T };
+  export const reactive: <T>(obj: T) => T;
+  export const inject: (key: string | Symbol, defaultValue?: any) => any;
+  export const provide: (key: string | Symbol, value: any) => void;
 }
 
 // Define .vue file typings
