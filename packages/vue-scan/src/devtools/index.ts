@@ -2,6 +2,8 @@ import type { PerformanceMonitor, ComponentMetrics } from '../core/monitor';
 import { setupVueScanDevtoolsPlugin } from './utils';
 import { setupMemoryProfilerPanel } from './memory-panel';
 import type { App } from 'vue';
+// Export devtools components
+export * from './components';
 
 // Custom DevTools events
 const DEVTOOLS_EVENTS = {
