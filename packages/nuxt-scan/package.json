@@ -34,11 +34,9 @@
   },
   "main": "./dist/module.cjs",
   "types": "./dist/types.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
-    "build": "nuxt-module-build",
+    "build": "nuxt-module-build build",
     "dev": "nuxi dev playground",
     "lint": "biome lint src",
     "prepare": "nuxt-module-build",
@@ -50,16 +48,20 @@
     "@nuxt/devtools-kit": "^2.3.0",
     "@nuxt/devtools-ui-kit": "^2.3.0",
     "@nuxt/kit": "^3.8.0",
+    "@unhead/vue": "^1.8.10",
+    "defu": "^6.1.4",
     "express": "^4.21.2",
     "h3": "^1.15.1",
+    "vue-router": "^4.3.0",
     "vue-scan": "workspace:*"
   },
   "devDependencies": {
-    "@nuxt/module-builder": "^0.5.0",
+    "@nuxt/module-builder": "^0.5.4",
     "@nuxt/schema": "^3.8.0",
     "@types/express": "^5.0.0",
     "@types/node": "^18.0.0",
     "nuxt": "^3.8.0",
+    "unbuild": "^2.0.0",
     "vue": "^3.3.0"
   },
   "peerDependencies": {
