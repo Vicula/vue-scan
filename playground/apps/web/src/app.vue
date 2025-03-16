@@ -15,6 +15,9 @@ const FormComponent = defineAsyncComponent(
 const RenderOptimizations = defineAsyncComponent(
   () => import('./components/RenderOptimizations.vue'),
 );
+const MemoryProfileDemo = defineAsyncComponent(
+  () => import('./components/MemoryProfileDemo.vue'),
+);
 
 const appName = 'Vue Scan Demo';
 const activeTab = ref('demo');
@@ -26,6 +29,7 @@ const tabs = [
   { id: 'api', label: 'API Component' },
   { id: 'form', label: 'Form Component' },
   { id: 'render', label: 'Render Optimizations' },
+  { id: 'memory', label: 'Memory Profiling' },
 ];
 
 function setActiveTab(tabId: string) {
@@ -61,6 +65,7 @@ function setActiveTab(tabId: string) {
       <ApiComponent v-else-if="activeTab === 'api'" />
       <FormComponent v-else-if="activeTab === 'form'" />
       <RenderOptimizations v-else-if="activeTab === 'render'" />
+      <MemoryProfileDemo v-else-if="activeTab === 'memory'" />
     </main>
     
     <footer>

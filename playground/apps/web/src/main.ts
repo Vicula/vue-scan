@@ -1,6 +1,19 @@
 import { createApp } from 'vue';
 import App from './app.vue';
+// @ts-ignore - vue-scan is defined in vite.config.ts aliases
 import { createVueScan } from 'vue-scan';
+// Import our local memory profiler
+import memoryProfiler from './memory-profiler';
+
+// Import Vue Devtools
+import { devtools } from '@vue/devtools';
+
+// Initialize Vue Devtools in development mode
+if (import.meta.env.DEV) {
+  // Connect to Vue Devtools
+  devtools.connect();
+  console.log('Vue Devtools initialized');
+}
 
 const app = createApp(App);
 
@@ -18,7 +31,26 @@ app.use(
 
     // Track memory usage
     trackMemory: true,
+
+    // Enable memory profiling
+    memoryProfiling: {
+      enabled: true,
+      autoStart: true,
+      sampleInterval: 2000,
+    },
   }),
 );
+
+// Register the memory profiler
+app.use(memoryProfiler);
+
+// Make memory profiler available globally for development
+if (import.meta.env.DEV) {
+  // @ts-ignore - Global property
+  window.$memoryProfiler = memoryProfiler;
+}
+
+// Add memory profiler to app's global properties
+app.config.globalProperties.$memoryProfiler = memoryProfiler;
 
 app.mount('#app');

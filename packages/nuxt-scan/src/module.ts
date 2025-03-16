@@ -10,6 +10,11 @@ export interface ModuleOptions {
   trackMemory?: boolean;
   trackMountTime?: boolean;
   trackRenderFrequency?: boolean;
+  memoryProfiling?: {
+    enabled?: boolean;
+    autoStart?: boolean;
+    sampleInterval?: number;
+  };
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -28,6 +33,11 @@ export default defineNuxtModule<ModuleOptions>({
     trackMemory: false,
     trackMountTime: true,
     trackRenderFrequency: true,
+    memoryProfiling: {
+      enabled: true,
+      autoStart: true,
+      sampleInterval: 5000,
+    },
   },
   setup(options, nuxt) {
     // Skip in production unless explicitly enabled

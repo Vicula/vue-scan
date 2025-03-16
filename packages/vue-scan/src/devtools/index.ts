@@ -1,6 +1,7 @@
 import type { App } from 'vue';
 import type { PerformanceMonitor, ComponentMetrics } from '../core/monitor';
 import type { VueDevtoolsHook } from '../types/vue-devtools';
+import type { ComponentMemoryStats } from '../core/memory-profiler';
 
 // Custom DevTools events
 const DEVTOOLS_EVENTS = {
@@ -10,6 +11,8 @@ const DEVTOOLS_EVENTS = {
   GET_METRICS: 'scan:get-metrics',
   GET_COMPONENT_METRICS: 'scan:get-component-metrics',
   TOGGLE_OVERLAY: 'scan:toggle-overlay',
+  GET_MEMORY_STATS: 'scan:get-memory-stats',
+  CLEAR_MEMORY_STATS: 'scan:clear-memory-stats',
 };
 
 export interface DevtoolsLayer {
@@ -45,6 +48,9 @@ export function setupDevtools(
     toggle: () => void;
     [key: string]: any;
   } | null = null;
+
+  // Memory stats interval ID for cleanup
+  let memoryStatsIntervalId: number | null = null;
 
   // Check if DevTools is available
   function checkDevToolsAvailability(): boolean {
@@ -101,6 +107,14 @@ export function setupDevtools(
             title: 'Clear Highlights',
             action: () => {
               monitor.clearHighlights();
+            },
+            actionType: 'icon',
+          },
+          {
+            icon: 'memory',
+            title: 'Memory Profiling',
+            action: () => {
+              toggleMemoryTab();
             },
             actionType: 'icon',
           },
@@ -167,8 +181,81 @@ export function setupDevtools(
       }
     });
 
+    // Handle custom events
+    hook.on('devtools:send', (event: any) => {
+      switch (event.event) {
+        case DEVTOOLS_EVENTS.GET_MEMORY_STATS:
+          sendMemoryStatsToDevtools();
+          break;
+        case DEVTOOLS_EVENTS.CLEAR_MEMORY_STATS:
+          clearMemoryStats();
+          break;
+      }
+    });
+
     // Initial data for DevTools
     updateAllComponentsForDevtools();
+
+    // Memory Stats Functions
+    function sendMemoryStatsToDevtools() {
+      if (
+        !hook ||
+        !monitor.options.trackMemory ||
+        typeof monitor.getMemoryStats !== 'function'
+      ) {
+        return;
+      }
+
+      const memoryStats = monitor.getMemoryStats();
+      hook.emit('custom-inspect-state', {
+        type: 'memory-stats',
+        data: formatMemoryStatsForDevtools(memoryStats),
+      });
+    }
+
+    function clearMemoryStats() {
+      if (typeof monitor.clearMemoryStats === 'function') {
+        monitor.clearMemoryStats();
+        sendMemoryStatsToDevtools();
+      }
+    }
+
+    function toggleMemoryTab() {
+      hook.emit('custom-inspect-state', {
+        type: 'toggle-memory-tab',
+      });
+    }
+
+    function formatMemoryStatsForDevtools(
+      stats: Record<string, ComponentMemoryStats>,
+    ) {
+      const formattedStats: Record<string, any> = {};
+
+      for (const [componentName, stat] of Object.entries(stats)) {
+        formattedStats[componentName] = {
+          'Component Name': componentName,
+          'Instance Count': stat.instanceCount,
+          'Current Heap (MB)': formatByteSize(stat.lastHeapUsed),
+          'Average Heap (MB)': formatByteSize(stat.averageHeapUsed),
+          'Maximum Heap (MB)': formatByteSize(stat.maxHeapUsed),
+          'Minimum Heap (MB)': formatByteSize(stat.minHeapUsed),
+          'Snapshot Count': stat.snapshots.length,
+        };
+      }
+
+      return formattedStats;
+    }
+
+    function formatByteSize(bytes: number) {
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    // Start sending periodic updates to DevTools
+    memoryStatsIntervalId = window.setInterval(() => {
+      if (monitor.options.trackMemory) {
+        sendMemoryStatsToDevtools();
+      }
+    }, 1000) as unknown as number;
   }
 
   function sendRender(componentMetrics: ComponentMetrics) {
@@ -357,6 +444,12 @@ export function setupDevtools(
     events.forEach((event) => {
       hook.off(event);
     });
+
+    // Clean up memory stats interval
+    if (memoryStatsIntervalId !== null) {
+      clearInterval(memoryStatsIntervalId);
+      memoryStatsIntervalId = null;
+    }
   }
 
   // Create the DevTools layer

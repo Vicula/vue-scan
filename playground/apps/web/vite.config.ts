@@ -13,6 +13,10 @@ export default defineConfig({
         __dirname,
         '../../../packages/vue-scan/dist/index.es.js',
       ),
+      'memory-profiler': resolve(
+        __dirname,
+        '../../../packages/nuxt-scan/dist/runtime/memory-profiler.js',
+      ),
     },
   },
 });
