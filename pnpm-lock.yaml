@@ -54,6 +54,9 @@ importers:
       '@types/node':
         specifier: ^18.0.0
         version: 18.19.80
+      '@vue/runtime-core':
+        specifier: ^3.5.13
+        version: 3.5.13
       typescript:
         specifier: ^5.0.0
         version: 5.8.2
