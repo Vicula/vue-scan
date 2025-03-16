@@ -1,13 +1,13 @@
 import type { Component, ComponentInternalInstance } from 'vue';
 
-interface MemorySnapshot {
+export interface MemorySnapshot {
   timestamp: number;
   component: string;
   heapUsed: number;
   instanceCount: number;
 }
 
-type ComponentMemoryStats = {
+export type ComponentMemoryStats = {
   component: string;
   averageHeapUsed: number;
   maxHeapUsed: number;
@@ -117,6 +117,13 @@ export function stopMemoryTracking() {
 }
 
 /**
+ * Checks if memory tracking is active
+ */
+export function isMemoryTracking() {
+  return isTracking;
+}
+
+/**
  * Returns all memory statistics
  */
 export function getMemoryStats() {
@@ -207,6 +214,7 @@ const plugin = {
   },
   startMemoryTracking,
   stopMemoryTracking,
+  isMemoryTracking,
   getMemoryStats,
   clearMemoryStats,
   useMemoryProfile,

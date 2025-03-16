@@ -29,9 +29,15 @@ importers:
 
   packages/nuxt-scan:
     dependencies:
+      '@nuxt/devtools-kit':
+        specifier: ^2.3.0
+        version: 2.3.0(magicast@0.3.5)(vite@6.2.2(@types/node@18.19.80)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.0))
       '@nuxt/kit':
         specifier: ^3.8.0
         version: 3.16.0(magicast@0.3.5)
+      h3:
+        specifier: ^1.15.1
+        version: 1.15.1
       vue-scan:
         specifier: workspace:*
         version: link:../vue-scan
@@ -47,7 +53,10 @@ importers:
         version: 18.19.80
       nuxt:
         specifier: ^3.8.0
-        version: 3.16.0(@biomejs/biome@1.9.4)(@parcel/watcher@2.5.1)(@types/node@18.19.80)(db0@0.3.1)(ioredis@5.6.0)(magicast@0.3.5)(rollup@3.29.5)(terser@5.39.0)(typescript@5.8.2)(vite@6.2.2(@types/node@18.19.80)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.0))(yaml@2.7.0)
+        version: 3.16.0(@biomejs/biome@1.9.4)(@parcel/watcher@2.5.1)(@types/node@18.19.80)(db0@0.3.1)(ioredis@5.6.0)(magicast@0.3.5)(rollup@4.35.0)(terser@5.39.0)(typescript@5.8.2)(vite@6.2.2(@types/node@18.19.80)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.0))(yaml@2.7.0)
+      vue:
+        specifier: ^3.3.0
+        version: 3.5.13(typescript@5.8.2)
 
   packages/vue-scan:
     dependencies:
@@ -5061,10 +5070,10 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  '@nuxt/vite-builder@3.16.0(@biomejs/biome@1.9.4)(@types/node@18.19.80)(magicast@0.3.5)(rollup@3.29.5)(terser@5.39.0)(typescript@5.8.2)(vue@3.5.13(typescript@5.8.2))(yaml@2.7.0)':
+  '@nuxt/vite-builder@3.16.0(@biomejs/biome@1.9.4)(@types/node@18.19.80)(magicast@0.3.5)(rollup@4.35.0)(terser@5.39.0)(typescript@5.8.2)(vue@3.5.13(typescript@5.8.2))(yaml@2.7.0)':
     dependencies:
       '@nuxt/kit': 3.16.0(magicast@0.3.5)
-      '@rollup/plugin-replace': 6.0.2(rollup@3.29.5)
+      '@rollup/plugin-replace': 6.0.2(rollup@4.35.0)
       '@vitejs/plugin-vue': 5.2.1(vite@6.2.2(@types/node@18.19.80)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.0))(vue@3.5.13(typescript@5.8.2))
       '@vitejs/plugin-vue-jsx': 4.1.1(vite@6.2.2(@types/node@18.19.80)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.0))(vue@3.5.13(typescript@5.8.2))
       autoprefixer: 10.4.21(postcss@8.5.3)
@@ -5086,7 +5095,7 @@ snapshots:
       perfect-debounce: 1.0.0
       pkg-types: 2.1.0
       postcss: 8.5.3
-      rollup-plugin-visualizer: 5.14.0(rollup@3.29.5)
+      rollup-plugin-visualizer: 5.14.0(rollup@4.35.0)
       std-env: 3.8.1
       ufo: 1.5.4
       unenv: 2.0.0-rc.14
@@ -5336,13 +5345,6 @@ snapshots:
       rollup: 4.35.0
 
   '@rollup/plugin-replace@5.0.7(rollup@3.29.5)':
-    dependencies:
-      '@rollup/pluginutils': 5.1.4(rollup@3.29.5)
-      magic-string: 0.30.17
-    optionalDependencies:
-      rollup: 3.29.5
-
-  '@rollup/plugin-replace@6.0.2(rollup@3.29.5)':
     dependencies:
       '@rollup/pluginutils': 5.1.4(rollup@3.29.5)
       magic-string: 0.30.17
@@ -6565,9 +6567,9 @@ snapshots:
 
   image-meta@0.2.1: {}
 
-  impound@0.2.2(rollup@3.29.5):
+  impound@0.2.2(rollup@4.35.0):
     dependencies:
-      '@rollup/pluginutils': 5.1.4(rollup@3.29.5)
+      '@rollup/pluginutils': 5.1.4(rollup@4.35.0)
       mlly: 1.7.4
       mocked-exports: 0.1.1
       pathe: 2.0.3
@@ -7032,7 +7034,7 @@ snapshots:
 
   nuxi@3.23.0: {}
 
-  nuxt@3.16.0(@biomejs/biome@1.9.4)(@parcel/watcher@2.5.1)(@types/node@18.19.80)(db0@0.3.1)(ioredis@5.6.0)(magicast@0.3.5)(rollup@3.29.5)(terser@5.39.0)(typescript@5.8.2)(vite@6.2.2(@types/node@18.19.80)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.0))(yaml@2.7.0):
+  nuxt@3.16.0(@biomejs/biome@1.9.4)(@parcel/watcher@2.5.1)(@types/node@18.19.80)(db0@0.3.1)(ioredis@5.6.0)(magicast@0.3.5)(rollup@4.35.0)(terser@5.39.0)(typescript@5.8.2)(vite@6.2.2(@types/node@18.19.80)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.0))(yaml@2.7.0):
     dependencies:
       '@nuxt/cli': 3.23.0(magicast@0.3.5)
       '@nuxt/devalue': 2.0.2
@@ -7040,7 +7042,7 @@ snapshots:
       '@nuxt/kit': 3.16.0(magicast@0.3.5)
       '@nuxt/schema': 3.16.0
       '@nuxt/telemetry': 2.6.5(magicast@0.3.5)
-      '@nuxt/vite-builder': 3.16.0(@biomejs/biome@1.9.4)(@types/node@18.19.80)(magicast@0.3.5)(rollup@3.29.5)(terser@5.39.0)(typescript@5.8.2)(vue@3.5.13(typescript@5.8.2))(yaml@2.7.0)
+      '@nuxt/vite-builder': 3.16.0(@biomejs/biome@1.9.4)(@types/node@18.19.80)(magicast@0.3.5)(rollup@4.35.0)(terser@5.39.0)(typescript@5.8.2)(vue@3.5.13(typescript@5.8.2))(yaml@2.7.0)
       '@oxc-parser/wasm': 0.56.5
       '@unhead/vue': 2.0.0-rc.13(vue@3.5.13(typescript@5.8.2))
       '@vue/shared': 3.5.13
@@ -7061,7 +7063,7 @@ snapshots:
       h3: 1.15.1
       hookable: 5.5.3
       ignore: 7.0.3
-      impound: 0.2.2(rollup@3.29.5)
+      impound: 0.2.2(rollup@4.35.0)
       jiti: 2.4.2
       klona: 2.0.6
       knitwork: 1.2.0
@@ -7604,15 +7606,6 @@ snapshots:
       typescript: 5.8.2
     optionalDependencies:
       '@babel/code-frame': 7.26.2
-
-  rollup-plugin-visualizer@5.14.0(rollup@3.29.5):
-    dependencies:
-      open: 8.4.2
-      picomatch: 4.0.2
-      source-map: 0.7.4
-      yargs: 17.7.2
-    optionalDependencies:
-      rollup: 3.29.5
 
   rollup-plugin-visualizer@5.14.0(rollup@4.35.0):
     dependencies:
