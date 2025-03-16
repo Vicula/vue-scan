@@ -75,11 +75,23 @@ export function defineCustomPanel(options: CustomPanelOptions): void {
 
   try {
     // Use the official API to register the panel
-    pluginApi.addTimelineLayer({
-      id: options.id,
-      label: options.label,
-      color: 0x42b883,
-    });
+    if (pluginApi.addCustomTab) {
+      // Modern DevTools API supports custom tabs/panels
+      pluginApi.addCustomTab({
+        name: options.id,
+        icon: options.icon,
+        title: options.label,
+        component: options.component,
+        props: options.props || {},
+      });
+    } else {
+      // Fallback to timeline layer for older DevTools API versions
+      pluginApi.addTimelineLayer({
+        id: options.id,
+        label: options.label,
+        color: 0x42b883,
+      });
+    }
 
     console.log(`[Vue Scan] Registered custom panel: ${options.label}`);
   } catch (e) {
