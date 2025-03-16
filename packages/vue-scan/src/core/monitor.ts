@@ -44,7 +44,9 @@ export interface PerformanceMonitor {
   options: VueScanOptions;
 
   // Methods
-  trackComponent: (instance: ComponentInternalInstance) => void;
+  trackComponent: (
+    instance: ComponentInternalInstance,
+  ) => ComponentMetrics | undefined;
   getComponentById: (id: string) => ComponentMetrics | undefined;
   getComponentsByName: (name: string) => ComponentMetrics[];
   highlightComponent: (id: string, color?: string) => void;
@@ -75,11 +77,13 @@ export function createPerformanceMonitor(
     activeRenders,
     options,
 
-    trackComponent(instance: ComponentInternalInstance) {
+    trackComponent(
+      instance: ComponentInternalInstance,
+    ): ComponentMetrics | undefined {
       // Skip if in ignore list
       const componentName = instance.type.__name || 'Anonymous';
       if (options.ignore?.includes(componentName)) {
-        return;
+        return undefined;
       }
 
       const id = instance.uid.toString();
@@ -137,9 +141,11 @@ export function createPerformanceMonitor(
 
       // Restore after a short delay
       setTimeout(() => {
-        component.el.style.outline = originalStyles.outline;
-        component.el.style.outlineOffset = originalStyles.outlineOffset;
-        component.el.style.position = originalStyles.position;
+        if (component.el) {
+          component.el.style.outline = originalStyles.outline;
+          component.el.style.outlineOffset = originalStyles.outlineOffset;
+          component.el.style.position = originalStyles.position;
+        }
       }, 1000);
     },
 
@@ -164,7 +170,8 @@ export function createPerformanceMonitor(
     },
 
     startMemoryTracking() {
-      if (!options.trackMemory || !window.performance?.memory) return;
+      // Check for memory API support in Performance interface
+      if (!options.trackMemory || !('memory' in window.performance)) return;
 
       memoryTrackingInterval = window.setInterval(() => {
         const memory = (window.performance as any).memory;
@@ -196,23 +203,30 @@ export function createPerformanceMonitor(
       if (!instance) return;
 
       const componentMetrics = monitor.trackComponent(instance);
+      // Return early if component metrics aren't available (e.g., in ignore list)
       if (!componentMetrics) return;
 
       // Track mount time
       if (options.trackMountTime) {
         onMounted(() => {
-          componentMetrics.mountTime = performance.now();
+          if (componentMetrics) {
+            componentMetrics.mountTime = performance.now();
+          }
         });
       }
 
       // Track render time and frequency
       if (options.trackRenderFrequency) {
         onUpdated(() => {
+          if (!componentMetrics) return;
+
           const startTime = performance.now();
           activeRenders.add(componentMetrics.id);
 
           // Use microtask to measure render duration
           queueMicrotask(() => {
+            if (!componentMetrics) return;
+
             const endTime = performance.now();
             const renderTime = endTime - startTime;
 
