@@ -9,6 +9,9 @@ import memoryProfiler, {
   useMemoryProfile,
 } from './memory-profiler';
 
+// WeakMap to store label elements for components
+const componentLabels = new WeakMap<HTMLElement, HTMLElement>();
+
 // Performance metrics for a component
 export interface ComponentMetrics {
   // Component identification
@@ -195,15 +198,53 @@ export function createPerformanceMonitor(
       // Apply permanent overlay to the component if enabled
       if (options.permanentComponentOverlays && metrics.el) {
         // Add a persistent outline to the element - make it more visible
-        const overlayColor = 'rgba(255, 0, 0, 0.5)'; // Bright red with higher opacity
+        const overlayColor =
+          options.overlayBorderColor || 'rgba(255, 0, 0, 0.5)';
         metrics.el.style.outline = `2px solid ${overlayColor}`;
         metrics.el.style.outlineOffset = '-2px';
+
+        // Add a subtle background color
+        metrics.el.style.backgroundColor =
+          options.overlayBackgroundColor || 'rgba(255, 200, 200, 0.1)';
+
+        // Ensure the element has position for the label
+        if (metrics.el.style.position === 'static') {
+          metrics.el.style.position = 'relative';
+        }
 
         // Add component name as a data attribute for debugging
         metrics.el.setAttribute('data-vue-scan-component', componentName);
 
         // Add component ID as a data attribute
         metrics.el.setAttribute('data-vue-scan-id', id);
+
+        // Add a permanent label showing the component name if enabled
+        if (options.showComponentLabels !== false) {
+          // First, check if we already have a label
+          const existingLabel = componentLabels.get(metrics.el);
+          if (!existingLabel) {
+            const labelElement = document.createElement('div');
+            labelElement.className =
+              'vue-scan-component-label vue-scan-permanent-label';
+            labelElement.textContent = componentName;
+            labelElement.style.position = 'absolute';
+            labelElement.style.top = '0';
+            labelElement.style.left = '0';
+            labelElement.style.background =
+              options.labelBackgroundColor || 'rgba(0, 0, 0, 0.6)';
+            labelElement.style.color = options.labelTextColor || 'white';
+            labelElement.style.padding = '2px 6px';
+            labelElement.style.fontSize = '10px';
+            labelElement.style.fontFamily = 'monospace';
+            labelElement.style.borderRadius = '0 0 4px 0';
+            labelElement.style.zIndex = '9999';
+            labelElement.style.pointerEvents = 'none'; // Don't interfere with clicks
+
+            // Store the label element reference
+            componentLabels.set(metrics.el, labelElement);
+            metrics.el.appendChild(labelElement);
+          }
+        }
 
         // Log to verify this code is being executed
         console.log(`Applied outline to component: ${componentName} (${id})`);
@@ -238,23 +279,55 @@ export function createPerformanceMonitor(
         position: component.el.style.position,
         backgroundColor: component.el.style.backgroundColor,
         transition: component.el.style.transition,
+        zIndex: component.el.style.zIndex,
       };
 
-      // Make the highlight more noticeable
-      const moreVisibleColor = 'rgba(255, 0, 0, 0.5)'; // Brighter red with higher opacity
+      // Get colors from options or use defaults
+      const moreVisibleColor =
+        options.overlayBorderColor || 'rgba(255, 0, 0, 0.5)';
+      const bgColor =
+        options.overlayBackgroundColor || 'rgba(255, 200, 200, 0.2)';
 
       // Apply highlight with transition
       component.el.style.transition = 'all 0.3s ease';
       component.el.style.outline = `3px solid ${moreVisibleColor}`;
       component.el.style.outlineOffset = '-3px';
-      component.el.style.backgroundColor = 'rgba(255, 200, 200, 0.2)'; // Light red background
+      component.el.style.backgroundColor = bgColor;
 
       if (component.el.style.position === 'static') {
         component.el.style.position = 'relative';
       }
 
+      // Ensure label is above other content
+      if (!component.el.style.zIndex) {
+        component.el.style.zIndex = '1';
+      }
+
       // Add a data attribute to indicate it's highlighted
       component.el.setAttribute('data-vue-scan-highlighted', 'true');
+
+      // Create and add a label element showing the component name
+      if (options.showComponentLabels !== false) {
+        const labelElement = document.createElement('div');
+        labelElement.className = 'vue-scan-component-label';
+        labelElement.textContent = component.name;
+        labelElement.style.position = 'absolute';
+        labelElement.style.top = '0';
+        labelElement.style.left = '0';
+        labelElement.style.background =
+          options.labelBackgroundColor || 'rgba(0, 0, 0, 0.7)';
+        labelElement.style.color = options.labelTextColor || 'white';
+        labelElement.style.padding = '2px 6px';
+        labelElement.style.fontSize = '10px';
+        labelElement.style.fontFamily = 'monospace';
+        labelElement.style.borderRadius = '0 0 4px 0';
+        labelElement.style.zIndex = '9999';
+        labelElement.style.pointerEvents = 'none'; // Don't interfere with clicks
+
+        // Store the label element reference for cleanup using WeakMap
+        componentLabels.set(component.el, labelElement);
+        component.el.appendChild(labelElement);
+      }
 
       // Log element dimensions to help debug visibility issues
       const rect = component.el.getBoundingClientRect();
@@ -275,7 +348,15 @@ export function createPerformanceMonitor(
           component.el.style.position = originalStyles.position;
           component.el.style.backgroundColor = originalStyles.backgroundColor;
           component.el.style.transition = originalStyles.transition;
+          component.el.style.zIndex = originalStyles.zIndex;
           component.el.removeAttribute('data-vue-scan-highlighted');
+
+          // Remove the label element
+          const labelElement = componentLabels.get(component.el);
+          if (labelElement && component.el.contains(labelElement)) {
+            component.el.removeChild(labelElement);
+          }
+          componentLabels.delete(component.el);
         }
       }, 1000);
     },
@@ -447,11 +528,45 @@ export function createPerformanceMonitor(
 
           // Apply overlay if enabled
           if (options.permanentComponentOverlays) {
-            const overlayColor = 'rgba(255, 0, 0, 0.5)';
+            const overlayColor =
+              options.overlayBorderColor || 'rgba(255, 0, 0, 0.5)';
             el.style.outline = `2px solid ${overlayColor}`;
             el.style.outlineOffset = '-2px';
             el.setAttribute('data-vue-scan-component', componentName);
             el.setAttribute('data-vue-scan-id', domId);
+
+            // Add a subtle background color
+            el.style.backgroundColor =
+              options.overlayBackgroundColor || 'rgba(255, 200, 200, 0.1)';
+
+            // Ensure the element has position for the label
+            if (el.style.position === 'static') {
+              el.style.position = 'relative';
+            }
+
+            // Add a permanent label showing the component name
+            if (options.showComponentLabels !== false) {
+              const labelElement = document.createElement('div');
+              labelElement.className =
+                'vue-scan-component-label vue-scan-permanent-label';
+              labelElement.textContent = componentName;
+              labelElement.style.position = 'absolute';
+              labelElement.style.top = '0';
+              labelElement.style.left = '0';
+              labelElement.style.background =
+                options.labelBackgroundColor || 'rgba(0, 0, 0, 0.6)';
+              labelElement.style.color = options.labelTextColor || 'white';
+              labelElement.style.padding = '2px 6px';
+              labelElement.style.fontSize = '10px';
+              labelElement.style.fontFamily = 'monospace';
+              labelElement.style.borderRadius = '0 0 4px 0';
+              labelElement.style.zIndex = '9999';
+              labelElement.style.pointerEvents = 'none'; // Don't interfere with clicks
+
+              // Store the label element reference
+              componentLabels.set(el, labelElement);
+              el.appendChild(labelElement);
+            }
           }
 
           newComponentsCount++;
